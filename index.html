@@ -9,22 +9,23 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // TODO: Замените на свои данные из консоли Firebase
+        // Замените на свои данные из консоли Firebase
         const firebaseConfig = {
-  apiKey: "AIzaSyBOtk6M4eH0ZgTsJ8sC-QHNVgRqqGU5Lak",
-  authDomain: "tot-dub.firebaseapp.com",
-  databaseURL: "https://tot-dub-default-rtdb.firebaseio.com",
-  projectId: "tot-dub",
-  storageBucket: "tot-dub.firebasestorage.app",
-  messagingSenderId: "368239154357",
-  appId: "1:368239154357:web:c7db40fe79b60392d21afc",
-  measurementId: "G-5JX2KKJ3TY"
+            apiKey: "ВАШ_API_KEY",
+            authDomain: "ВАШ_AUTH_DOMAIN",
+            databaseURL: "ВАШ_DATABASE_URL",
+            projectId: "ВАШ_PROJECT_ID",
+            storageBucket: "ВАШ_STORAGE_BUCKET",
+            messagingSenderId: "ВАШ_SENDER_ID",
+            appId: "ВАШ_APP_ID"
         };
 
         // Инициализация
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
 
         // Делаем объекты доступными глобально для script.js
         window.db = db;
@@ -34,6 +35,10 @@
         window.child = child;
         window.update = update;
         window.remove = remove;
+        window.auth = auth;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signOut = signOut;
+        window.onAuthStateChanged = onAuthStateChanged;
     </script>
     <script type="module" src="script.js"></script>
 </head>
@@ -212,8 +217,8 @@
                 <h2>Вход для администратора</h2>
                 <form id="loginForm">
                     <div class="form-group">
-                        <label for="username">Логин</label>
-                        <input type="text" id="username" required>
+                        <label for="username">Email</label>
+                        <input type="email" id="username" required>
                     </div>
                     <div class="form-group">
                         <label for="password">Пароль</label>
