@@ -30,7 +30,6 @@ const closeModal = document.querySelector('.close');
 const loginForm = document.getElementById('loginForm');
 
 // ==================== Работа с Firebase ====================
-// Функция загрузки всех данных из Firebase
 async function loadAllData() {
     try {
         const db = window.db;
@@ -42,7 +41,6 @@ async function loadAllData() {
         if (materialsSnap.exists()) {
             materials = materialsSnap.val();
         } else {
-            // Начальные данные
             materials = [
                 { id: '1', title: 'Дубляж трейлера "Проект Z"', type: 'Видео', description: 'Готовая озвучка трейлера с участием трёх актёров. Дорожка 5.1.', link: '#' },
                 { id: '2', title: 'Фоновая музыка для сцены', type: 'Аудио', description: 'Трек в стиле эмбиент, длительность 3:45.', link: '#' },
@@ -96,22 +94,15 @@ async function loadAllData() {
     }
 }
 
-// Сохранение материалов в Firebase
 async function saveMaterials() {
     await window.set(window.ref(window.db, 'materials'), materials);
 }
-
-// Сохранение команды
 async function saveTeam() {
     await window.set(window.ref(window.db, 'team'), team);
 }
-
-// Сохранение проектов
 async function saveProjects() {
     await window.set(window.ref(window.db, 'projects'), projects);
 }
-
-// Сохранение контактов
 async function saveContacts() {
     await window.set(window.ref(window.db, 'contacts'), contacts);
 }
@@ -544,8 +535,8 @@ function escapeHtml(unsafe) {
 
 // ==================== Инициализация ====================
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadAllData();   // загружаем данные из Firebase
-    checkAuth();           // проверяем авторизацию (localStorage)
+    await loadAllData();
+    checkAuth();
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
