@@ -1,0 +1,475 @@
+/* === Строгий стиль: черный, белый, зеленый === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #0a0a0a;
+    color: #ffffff;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+}
+
+/* Шапка */
+header {
+    background-color: #000000;
+    border-bottom: 2px solid #2ecc71;
+    padding: 15px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.logo h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: #2ecc71;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+}
+
+nav a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+    padding-bottom: 5px;
+    border-bottom: 2px solid transparent;
+}
+
+    nav a:hover,
+    nav a.active {
+        color: #2ecc71;
+        border-bottom-color: #2ecc71;
+    }
+
+.auth-area {
+    display: flex;
+    gap: 10px;
+}
+
+.auth-btn {
+    background: transparent;
+    border: 1px solid #2ecc71;
+    color: #2ecc71;
+    padding: 8px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+    .auth-btn:hover {
+        background-color: #2ecc71;
+        color: #000000;
+    }
+
+/* Основной контент */
+main {
+    flex: 1;
+    padding: 40px 0;
+}
+
+.page {
+    display: none;
+}
+
+    .page.active-page {
+        display: block;
+    }
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 500;
+    margin-bottom: 30px;
+    position: relative;
+    display: inline-block;
+}
+
+    .section-title::after {
+        content: '';
+        display: block;
+        width: 60%;
+        height: 3px;
+        background-color: #2ecc71;
+        margin-top: 8px;
+    }
+
+/* Сетка материалов */
+.materials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+/* Карточка материала (и аналогичные для команды/проектов) */
+.material-card,
+.team-card,
+.project-card {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 20px;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+    .material-card:hover,
+    .team-card:hover,
+    .project-card:hover {
+        transform: translateY(-4px);
+        border-color: #2ecc71;
+    }
+
+.material-type,
+.team-role {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2ecc71;
+    margin-bottom: 10px;
+}
+
+.material-title,
+.team-name,
+.project-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #ffffff;
+    padding-right: 40px;
+}
+
+.material-description,
+.team-bio,
+.project-description {
+    font-size: 0.95rem;
+    color: #cccccc;
+    margin-bottom: 20px;
+    flex: 1;
+}
+
+.material-link,
+.team-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: transparent;
+    border: 1px solid #2ecc71;
+    color: #2ecc71;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-radius: 3px;
+    align-self: flex-start;
+}
+
+    .material-link:hover,
+    .team-link:hover {
+        background-color: #2ecc71;
+        color: #000000;
+    }
+
+.team-photo {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    background-color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.team-grid,
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+/* Кнопки управления на карточках */
+.card-actions {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 8px;
+}
+
+    .card-actions button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 4px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+        color: #888;
+    }
+
+        .card-actions button:hover {
+            background-color: #333;
+            color: #2ecc71;
+        }
+
+/* Сообщение о пустом списке */
+.empty-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 20px;
+    background-color: #1a1a1a;
+    border: 1px dashed #333;
+    border-radius: 4px;
+    color: #888;
+    font-size: 1.1rem;
+}
+
+/* Кнопка добавления */
+.add-button {
+    background-color: #2ecc71;
+    color: #000000;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: opacity 0.3s ease;
+    margin-bottom: 30px;
+    border: 1px solid #2ecc71;
+}
+
+    .add-button:hover {
+        opacity: 0.9;
+    }
+
+/* Формы */
+.add-form {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    padding: 30px;
+    margin-bottom: 40px;
+    border-radius: 4px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #2ecc71;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        background-color: #0a0a0a;
+        border: 1px solid #333;
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 1rem;
+        border-radius: 3px;
+        transition: border-color 0.3s ease;
+    }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.submit-btn {
+    background-color: #2ecc71;
+    color: #000000;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    border: 1px solid #2ecc71;
+    transition: background-color 0.3s ease;
+}
+
+    .submit-btn:hover {
+        background-color: transparent;
+        color: #2ecc71;
+    }
+
+.cancel-btn {
+    background-color: transparent;
+    color: #888;
+    border: 1px solid #444;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+    .cancel-btn:hover {
+        border-color: #888;
+        color: #ffffff;
+    }
+
+/* Контакты */
+.contacts-content {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    padding: 30px;
+    border-radius: 4px;
+    margin-bottom: 30px;
+    line-height: 2;
+}
+
+    .contacts-content p {
+        margin-bottom: 10px;
+    }
+
+    .contacts-content a {
+        color: #2ecc71;
+        text-decoration: none;
+    }
+
+        .contacts-content a:hover {
+            text-decoration: underline;
+        }
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    align-items: center;
+    justify-content: center;
+}
+
+    .modal.show {
+        display: flex;
+    }
+
+.modal-content {
+    background-color: #1a1a1a;
+    border: 1px solid #2ecc71;
+    padding: 30px;
+    border-radius: 4px;
+    max-width: 400px;
+    width: 90%;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    color: #888;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+    .close:hover {
+        color: #2ecc71;
+    }
+
+/* Подвал */
+footer {
+    background-color: #000000;
+    border-top: 2px solid #2ecc71;
+    padding: 25px 0;
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
