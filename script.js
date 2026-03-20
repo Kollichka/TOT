@@ -11,7 +11,7 @@ let team = [];
 let projects = [];
 let contacts = { email: '', social: '', other: '' };
 let isAdmin = false;
-let currentProfileId = null; // ID участника, чей профиль открыт
+let currentProfileId = null;
 
 // DOM элементы
 const navLinks = document.querySelectorAll('[data-page]');
@@ -26,8 +26,7 @@ const adminControls = {
     materials: document.getElementById('materialsAdmin'),
     team: document.getElementById('teamAdmin'),
     projects: document.getElementById('projectsAdmin'),
-    contacts: document.getElementById('contactsAdmin'),
-    profile: document.getElementById('profileAdmin')
+    contacts: document.getElementById('contactsAdmin')
 };
 
 const loginBtn = document.getElementById('loginBtn');
@@ -52,7 +51,7 @@ function loadAllData() {
         saveMaterials();
     }
 
-    // Команда (с новыми полями)
+    // Команда
     const storedTeam = localStorage.getItem(STORAGE_TEAM);
     if (storedTeam) {
         team = JSON.parse(storedTeam);
@@ -130,13 +129,14 @@ function updateAuthUI() {
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'block';
         if (adminControls[currentPage]) adminControls[currentPage].style.display = 'block';
-        if (currentPage === 'member-profile' && currentProfileId) {
-            adminControls.profile.style.display = 'block';
-        }
     } else {
         loginBtn.style.display = 'block';
         logoutBtn.style.display = 'none';
         Object.values(adminControls).forEach(el => { if (el) el.style.display = 'none'; });
+    }
+    // Если страница профиля, перерисуем её, чтобы кнопка редактирования отобразилась или скрылась
+    if (currentPage === 'member-profile' && currentProfileId) {
+        renderMemberProfile(currentProfileId);
     }
 }
 
@@ -179,7 +179,7 @@ function renderCurrentPage() {
     }
 }
 
-// ==================== Материалы (без изменений, но для краткости оставлены) ====================
+// ==================== Материалы (CRUD) ====================
 function renderMaterials() {
     const grid = document.getElementById('materialsGrid');
     if (materials.length === 0) {
@@ -264,7 +264,7 @@ document.getElementById('materialForm')?.addEventListener('submit', (e) => {
     document.getElementById('materialFormContainer').style.display = 'none';
 });
 
-// ==================== Команда (с кликабельностью) ====================
+// ==================== Команда ====================
 function renderTeam() {
     const grid = document.getElementById('teamGrid');
     if (team.length === 0) {
@@ -289,7 +289,7 @@ function renderTeam() {
     });
     grid.innerHTML = html;
 
-    // Привязываем обработчики
+    // Клик по карточке для перехода в профиль
     document.querySelectorAll('.team-card').forEach(card => {
         const memberId = card.dataset.id;
         card.addEventListener('click', (e) => {
@@ -358,8 +358,9 @@ document.getElementById('memberForm')?.addEventListener('submit', (e) => {
         team.push({ id: Date.now().toString(), name, role, photo, bio, social });
     }
     saveTeam();
+    // Если профиль этого участника открыт, обновляем его
     if (currentPage === 'member-profile' && currentProfileId === id) {
-        renderMemberProfile(id); // обновляем профиль, если он открыт
+        renderMemberProfile(id);
     } else {
         renderTeam();
     }
@@ -369,25 +370,38 @@ document.getElementById('memberForm')?.addEventListener('submit', (e) => {
 // ==================== Профиль участника ====================
 function showMemberProfile(memberId) {
     currentProfileId = memberId;
-    renderMemberProfile(memberId);
     switchPage('member-profile');
+    renderMemberProfile(memberId);
 }
 
 function renderMemberProfile(memberId) {
     const member = team.find(m => m.id === memberId);
     if (!member) return;
     const container = document.getElementById('memberProfileContent');
-    const html = `
+    let html = `
         <div class="profile-container">
             ${member.photo ? `<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name)}" class="profile-photo">` : '<div class="profile-photo" style="background:#333; display:flex; align-items:center; justify-content:center;">Нет фото</div>'}
             <h2 class="profile-name">${escapeHtml(member.name)}</h2>
             <div class="profile-role">${escapeHtml(member.role)}</div>
             <div class="profile-bio"><strong>Биография:</strong><br>${escapeHtml(member.bio || 'Не указана')}</div>
             <div class="profile-social"><strong>Социальные сети:</strong><br>${formatSocialLinks(member.social)}</div>
-        </div>
     `;
+    // Добавляем кнопку редактирования, если админ
+    if (isAdmin) {
+        html += `<button class="edit-profile-btn" id="editProfileBtn">✎ Редактировать профиль</button>`;
+    }
+    html += `</div>`;
     container.innerHTML = html;
-    updateAuthUI(); // чтобы показать/скрыть кнопку редактирования профиля
+
+    // Привязываем обработчик к кнопке редактирования
+    if (isAdmin) {
+        const editBtn = document.getElementById('editProfileBtn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                editMember(memberId);
+            });
+        }
+    }
 }
 
 function formatSocialLinks(socialStr) {
@@ -402,14 +416,7 @@ document.getElementById('backToTeamBtn').addEventListener('click', () => {
     switchPage('team');
 });
 
-// Редактирование профиля из страницы профиля
-document.getElementById('editProfileBtn')?.addEventListener('click', () => {
-    if (currentProfileId) {
-        editMember(currentProfileId);
-    }
-});
-
-// ==================== Проекты (без изменений) ====================
+// ==================== Проекты ====================
 function renderProjects() {
     const grid = document.getElementById('projectsGrid');
     if (projects.length === 0) {
@@ -489,7 +496,7 @@ document.getElementById('projectForm')?.addEventListener('submit', (e) => {
     document.getElementById('projectFormContainer').style.display = 'none';
 });
 
-// ==================== Контакты (без изменений) ====================
+// ==================== Контакты ====================
 function renderContacts() {
     const content = document.getElementById('contactsContent');
     let html = `
