@@ -532,3 +532,22 @@ footer {
 .profile-social a:hover {
     text-decoration: underline;
 }
+
+/* Кнопка редактирования профиля внутри профиля */
+.edit-profile-btn {
+    background-color: #2ecc71;
+    color: #000000;
+    border: none;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+    margin-top: 20px;
+    transition: all 0.3s;
+}
+.edit-profile-btn:hover {
+    background-color: transparent;
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+}
