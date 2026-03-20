@@ -1,22 +1,17 @@
 // ==================== Глобальные переменные ====================
-// Ключи localStorage
 const STORAGE_MATERIALS = 'totMaterials';
 const STORAGE_TEAM = 'totTeam';
 const STORAGE_PROJECTS = 'totProjects';
 const STORAGE_CONTACTS = 'totContacts';
-const STORAGE_AUTH = 'totAuth'; // флаг авторизации
+const STORAGE_AUTH = 'totAuth';
 
-// Текущая активная страница
 let currentPage = 'materials';
-
-// Данные
 let materials = [];
 let team = [];
 let projects = [];
 let contacts = { email: '', social: '', other: '' };
-
-// Флаг админа
 let isAdmin = false;
+let currentProfileId = null; // ID участника, чей профиль открыт
 
 // DOM элементы
 const navLinks = document.querySelectorAll('[data-page]');
@@ -24,14 +19,15 @@ const pages = {
     materials: document.getElementById('materials-page'),
     team: document.getElementById('team-page'),
     projects: document.getElementById('projects-page'),
-    contacts: document.getElementById('contacts-page')
+    contacts: document.getElementById('contacts-page'),
+    'member-profile': document.getElementById('member-profile-page')
 };
-
 const adminControls = {
     materials: document.getElementById('materialsAdmin'),
     team: document.getElementById('teamAdmin'),
     projects: document.getElementById('projectsAdmin'),
-    contacts: document.getElementById('contactsAdmin')
+    contacts: document.getElementById('contactsAdmin'),
+    profile: document.getElementById('profileAdmin')
 };
 
 const loginBtn = document.getElementById('loginBtn');
@@ -56,15 +52,15 @@ function loadAllData() {
         saveMaterials();
     }
 
-    // Команда
+    // Команда (с новыми полями)
     const storedTeam = localStorage.getItem(STORAGE_TEAM);
     if (storedTeam) {
         team = JSON.parse(storedTeam);
     } else {
         team = [
-            { id: '1', name: 'Анна Смирнова', role: 'Режиссёр дубляжа', photo: '' },
-            { id: '2', name: 'Пётр Иванов', role: 'Актёр озвучки', photo: '' },
-            { id: '3', name: 'Елена Петрова', role: 'Звукорежиссёр', photo: '' }
+            { id: '1', name: 'Анна Смирнова', role: 'Режиссёр дубляжа', photo: '', bio: 'Опыт работы более 10 лет.', social: 'https://vk.com/anna\nhttps://t.me/anna' },
+            { id: '2', name: 'Пётр Иванов', role: 'Актёр озвучки', photo: '', bio: 'Голос главного героя в 30+ проектах.', social: 'https://vk.com/petr' },
+            { id: '3', name: 'Елена Петрова', role: 'Звукорежиссёр', photo: '', bio: 'Специалист по обработке аудио.', social: '' }
         ];
         saveTeam();
     }
@@ -110,7 +106,7 @@ function checkAuth() {
 }
 
 function login(username, password) {
-    if (username === 'totdub' && password === 'totdub2026') {
+    if (username === 'admin' && password === 'admin') {
         localStorage.setItem(STORAGE_AUTH, 'true');
         isAdmin = true;
         updateAuthUI();
@@ -125,7 +121,6 @@ function logout() {
     localStorage.removeItem(STORAGE_AUTH);
     isAdmin = false;
     updateAuthUI();
-    // Закрыть все открытые формы
     hideAllForms();
     renderCurrentPage();
 }
@@ -134,12 +129,13 @@ function updateAuthUI() {
     if (isAdmin) {
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'block';
-        // Показываем админ-контролы на текущей странице
         if (adminControls[currentPage]) adminControls[currentPage].style.display = 'block';
+        if (currentPage === 'member-profile' && currentProfileId) {
+            adminControls.profile.style.display = 'block';
+        }
     } else {
         loginBtn.style.display = 'block';
         logoutBtn.style.display = 'none';
-        // Скрываем все админ-контролы
         Object.values(adminControls).forEach(el => { if (el) el.style.display = 'none'; });
     }
 }
@@ -147,7 +143,6 @@ function updateAuthUI() {
 function showModal() { loginModal.classList.add('show'); }
 function hideModal() { loginModal.classList.remove('show'); }
 
-// Скрыть все формы добавления/редактирования
 function hideAllForms() {
     document.getElementById('materialFormContainer').style.display = 'none';
     document.getElementById('memberFormContainer').style.display = 'none';
@@ -155,13 +150,11 @@ function hideAllForms() {
     document.getElementById('contactsFormContainer').style.display = 'none';
 }
 
-// ==================== Навигация по страницам ====================
+// ==================== Навигация ====================
 function switchPage(pageId) {
-    // Убираем активный класс со всех страниц
     Object.values(pages).forEach(p => p.classList.remove('active-page'));
-    pages[pageId].classList.add('active-page');
+    if (pages[pageId]) pages[pageId].classList.add('active-page');
 
-    // Обновляем активный пункт меню
     navLinks.forEach(link => {
         link.classList.remove('active');
         if (link.dataset.page === pageId) link.classList.add('active');
@@ -169,11 +162,10 @@ function switchPage(pageId) {
 
     currentPage = pageId;
     hideAllForms();
-
-    // Обновляем видимость админ-контролов
     updateAuthUI();
-
-    // Рендерим содержимое страницы
+    if (pageId !== 'member-profile') {
+        currentProfileId = null;
+    }
     renderCurrentPage();
 }
 
@@ -183,10 +175,11 @@ function renderCurrentPage() {
         case 'team': renderTeam(); break;
         case 'projects': renderProjects(); break;
         case 'contacts': renderContacts(); break;
+        case 'member-profile': if (currentProfileId) renderMemberProfile(currentProfileId); break;
     }
 }
 
-// ==================== Материалы (CRUD) ====================
+// ==================== Материалы (без изменений, но для краткости оставлены) ====================
 function renderMaterials() {
     const grid = document.getElementById('materialsGrid');
     if (materials.length === 0) {
@@ -211,15 +204,16 @@ function renderMaterials() {
         `;
     });
     grid.innerHTML = html;
+    if (isAdmin) attachMaterialEvents();
+}
 
-    if (isAdmin) {
-        document.querySelectorAll('.edit-material').forEach(btn => {
-            btn.addEventListener('click', (e) => { e.stopPropagation(); editMaterial(btn.dataset.id); });
-        });
-        document.querySelectorAll('.delete-material').forEach(btn => {
-            btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMaterial(btn.dataset.id); });
-        });
-    }
+function attachMaterialEvents() {
+    document.querySelectorAll('.edit-material').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); editMaterial(btn.dataset.id); });
+    });
+    document.querySelectorAll('.delete-material').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMaterial(btn.dataset.id); });
+    });
 }
 
 function editMaterial(id) {
@@ -242,18 +236,15 @@ function deleteMaterial(id) {
     }
 }
 
-// Добавление нового
 document.getElementById('addMaterialBtn')?.addEventListener('click', () => {
     document.getElementById('materialId').value = '';
     document.getElementById('materialForm').reset();
     document.getElementById('materialFormTitle').textContent = 'Новый материал';
     document.getElementById('materialFormContainer').style.display = 'block';
 });
-
 document.getElementById('cancelMaterial')?.addEventListener('click', () => {
     document.getElementById('materialFormContainer').style.display = 'none';
 });
-
 document.getElementById('materialForm')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('materialId').value;
@@ -261,32 +252,19 @@ document.getElementById('materialForm')?.addEventListener('submit', (e) => {
     const type = document.getElementById('materialType').value;
     const desc = document.getElementById('materialDesc').value.trim();
     const link = document.getElementById('materialLink').value.trim();
-
     if (!title || !desc || !link) return alert('Заполните поля');
-
     if (id) {
-        // редактирование
         const index = materials.findIndex(m => m.id === id);
-        if (index !== -1) {
-            materials[index] = { ...materials[index], title, type, description: desc, link };
-        }
+        if (index !== -1) materials[index] = { ...materials[index], title, type, description: desc, link };
     } else {
-        // добавление
-        const newMaterial = {
-            id: Date.now().toString(),
-            title,
-            type,
-            description: desc,
-            link
-        };
-        materials.push(newMaterial);
+        materials.push({ id: Date.now().toString(), title, type, description: desc, link });
     }
     saveMaterials();
     renderMaterials();
     document.getElementById('materialFormContainer').style.display = 'none';
 });
 
-// ==================== Команда (аналогично) ====================
+// ==================== Команда (с кликабельностью) ====================
 function renderTeam() {
     const grid = document.getElementById('teamGrid');
     if (team.length === 0) {
@@ -311,12 +289,21 @@ function renderTeam() {
     });
     grid.innerHTML = html;
 
+    // Привязываем обработчики
+    document.querySelectorAll('.team-card').forEach(card => {
+        const memberId = card.dataset.id;
+        card.addEventListener('click', (e) => {
+            if (!e.target.closest('.edit-member') && !e.target.closest('.delete-member')) {
+                showMemberProfile(memberId);
+            }
+        });
+    });
     if (isAdmin) {
         document.querySelectorAll('.edit-member').forEach(btn => {
-            btn.addEventListener('click', () => editMember(btn.dataset.id));
+            btn.addEventListener('click', (e) => { e.stopPropagation(); editMember(btn.dataset.id); });
         });
         document.querySelectorAll('.delete-member').forEach(btn => {
-            btn.addEventListener('click', () => deleteMember(btn.dataset.id));
+            btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMember(btn.dataset.id); });
         });
     }
 }
@@ -328,6 +315,8 @@ function editMember(id) {
     document.getElementById('memberName').value = member.name;
     document.getElementById('memberRole').value = member.role;
     document.getElementById('memberPhoto').value = member.photo || '';
+    document.getElementById('memberBio').value = member.bio || '';
+    document.getElementById('memberSocial').value = member.social || '';
     document.getElementById('memberFormTitle').textContent = 'Редактировать участника';
     document.getElementById('memberFormContainer').style.display = 'block';
 }
@@ -336,7 +325,11 @@ function deleteMember(id) {
     if (confirm('Удалить участника?')) {
         team = team.filter(m => m.id !== id);
         saveTeam();
-        renderTeam();
+        if (currentPage === 'member-profile' && currentProfileId === id) {
+            switchPage('team'); // если удалили открытого участника, возвращаемся к списку
+        } else {
+            renderTeam();
+        }
     }
 }
 
@@ -346,40 +339,77 @@ document.getElementById('addMemberBtn')?.addEventListener('click', () => {
     document.getElementById('memberFormTitle').textContent = 'Новый участник';
     document.getElementById('memberFormContainer').style.display = 'block';
 });
-
 document.getElementById('cancelMember')?.addEventListener('click', () => {
     document.getElementById('memberFormContainer').style.display = 'none';
 });
-
 document.getElementById('memberForm')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('memberId').value;
     const name = document.getElementById('memberName').value.trim();
     const role = document.getElementById('memberRole').value.trim();
     const photo = document.getElementById('memberPhoto').value.trim();
-
+    const bio = document.getElementById('memberBio').value.trim();
+    const social = document.getElementById('memberSocial').value.trim();
     if (!name || !role) return alert('Заполните имя и роль');
-
     if (id) {
         const index = team.findIndex(m => m.id === id);
-        if (index !== -1) {
-            team[index] = { ...team[index], name, role, photo };
-        }
+        if (index !== -1) team[index] = { ...team[index], name, role, photo, bio, social };
     } else {
-        const newMember = {
-            id: Date.now().toString(),
-            name,
-            role,
-            photo
-        };
-        team.push(newMember);
+        team.push({ id: Date.now().toString(), name, role, photo, bio, social });
     }
     saveTeam();
-    renderTeam();
+    if (currentPage === 'member-profile' && currentProfileId === id) {
+        renderMemberProfile(id); // обновляем профиль, если он открыт
+    } else {
+        renderTeam();
+    }
     document.getElementById('memberFormContainer').style.display = 'none';
 });
 
-// ==================== Проекты ====================
+// ==================== Профиль участника ====================
+function showMemberProfile(memberId) {
+    currentProfileId = memberId;
+    renderMemberProfile(memberId);
+    switchPage('member-profile');
+}
+
+function renderMemberProfile(memberId) {
+    const member = team.find(m => m.id === memberId);
+    if (!member) return;
+    const container = document.getElementById('memberProfileContent');
+    const html = `
+        <div class="profile-container">
+            ${member.photo ? `<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name)}" class="profile-photo">` : '<div class="profile-photo" style="background:#333; display:flex; align-items:center; justify-content:center;">Нет фото</div>'}
+            <h2 class="profile-name">${escapeHtml(member.name)}</h2>
+            <div class="profile-role">${escapeHtml(member.role)}</div>
+            <div class="profile-bio"><strong>Биография:</strong><br>${escapeHtml(member.bio || 'Не указана')}</div>
+            <div class="profile-social"><strong>Социальные сети:</strong><br>${formatSocialLinks(member.social)}</div>
+        </div>
+    `;
+    container.innerHTML = html;
+    updateAuthUI(); // чтобы показать/скрыть кнопку редактирования профиля
+}
+
+function formatSocialLinks(socialStr) {
+    if (!socialStr) return '—';
+    const links = socialStr.split('\n').filter(l => l.trim());
+    if (links.length === 0) return '—';
+    return links.map(link => `<a href="${link.trim()}" target="_blank">${link.trim()}</a>`).join('<br>');
+}
+
+// Кнопка "Назад к команде"
+document.getElementById('backToTeamBtn').addEventListener('click', () => {
+    switchPage('team');
+});
+
+// Редактирование профиля из страницы профиля
+document.getElementById('editProfileBtn')?.addEventListener('click', () => {
+    if (currentProfileId) {
+        editMember(currentProfileId);
+    }
+});
+
+// ==================== Проекты (без изменений) ====================
 function renderProjects() {
     const grid = document.getElementById('projectsGrid');
     if (projects.length === 0) {
@@ -403,7 +433,6 @@ function renderProjects() {
         `;
     });
     grid.innerHTML = html;
-
     if (isAdmin) {
         document.querySelectorAll('.edit-project').forEach(btn => {
             btn.addEventListener('click', () => editProject(btn.dataset.id));
@@ -439,50 +468,39 @@ document.getElementById('addProjectBtn')?.addEventListener('click', () => {
     document.getElementById('projectFormTitle').textContent = 'Новый проект';
     document.getElementById('projectFormContainer').style.display = 'block';
 });
-
 document.getElementById('cancelProject')?.addEventListener('click', () => {
     document.getElementById('projectFormContainer').style.display = 'none';
 });
-
 document.getElementById('projectForm')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('projectId').value;
     const title = document.getElementById('projectTitle').value.trim();
     const desc = document.getElementById('projectDesc').value.trim();
     const date = document.getElementById('projectDate').value.trim();
-
     if (!title || !desc || !date) return alert('Заполните поля');
-
     if (id) {
         const index = projects.findIndex(p => p.id === id);
-        if (index !== -1) {
-            projects[index] = { ...projects[index], title, description: desc, date };
-        }
+        if (index !== -1) projects[index] = { ...projects[index], title, description: desc, date };
     } else {
-        projects.push({
-            id: Date.now().toString(),
-            title,
-            description: desc,
-            date
-        });
+        projects.push({ id: Date.now().toString(), title, description: desc, date });
     }
     saveProjects();
     renderProjects();
     document.getElementById('projectFormContainer').style.display = 'none';
 });
 
-// ==================== Контакты ====================
+// ==================== Контакты (без изменений) ====================
 function renderContacts() {
     const content = document.getElementById('contactsContent');
     let html = `
         <p><strong>Email:</strong> <a href="mailto:${escapeHtml(contacts.email)}">${escapeHtml(contacts.email)}</a></p>
-        <p><strong>Соцсети:</strong> ${formatSocial(contacts.social)}</p>
+        <p><strong>Соцсети:</strong> ${formatContactsSocial(contacts.social)}</p>
         <p><strong>Дополнительно:</strong> ${escapeHtml(contacts.other)}</p>
     `;
     content.innerHTML = html;
 }
 
-function formatSocial(str) {
+function formatContactsSocial(str) {
     if (!str) return '—';
     return str.split(',').map(link => `<a href="${link.trim()}" target="_blank">${link.trim()}</a>`).join(', ');
 }
@@ -493,11 +511,9 @@ document.getElementById('editContactsBtn')?.addEventListener('click', () => {
     document.getElementById('contactOther').value = contacts.other;
     document.getElementById('contactsFormContainer').style.display = 'block';
 });
-
 document.getElementById('cancelContacts')?.addEventListener('click', () => {
     document.getElementById('contactsFormContainer').style.display = 'none';
 });
-
 document.getElementById('contactsForm')?.addEventListener('submit', (e) => {
     e.preventDefault();
     contacts.email = document.getElementById('contactEmail').value.trim();
@@ -508,7 +524,7 @@ document.getElementById('contactsForm')?.addEventListener('submit', (e) => {
     document.getElementById('contactsFormContainer').style.display = 'none';
 });
 
-// ==================== Вспомогательные функции ====================
+// ==================== Вспомогательные ====================
 function escapeHtml(unsafe) {
     if (!unsafe) return '';
     return unsafe.replace(/[&<>"]/g, function(m) {
@@ -520,12 +536,11 @@ function escapeHtml(unsafe) {
     });
 }
 
-// ==================== Инициализация и обработчики ====================
+// ==================== Инициализация ====================
 document.addEventListener('DOMContentLoaded', () => {
     loadAllData();
     checkAuth();
 
-    // Навигация
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -533,7 +548,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Авторизация
     loginBtn.addEventListener('click', showModal);
     logoutBtn.addEventListener('click', logout);
     closeModal.addEventListener('click', hideModal);
@@ -546,6 +560,5 @@ document.addEventListener('DOMContentLoaded', () => {
         login(username, password);
     });
 
-    // По умолчанию показываем страницу материалов
     switchPage('materials');
 });
