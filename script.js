@@ -134,10 +134,6 @@ function updateAuthUI() {
         logoutBtn.style.display = 'none';
         Object.values(adminControls).forEach(el => { if (el) el.style.display = 'none'; });
     }
-    // Если страница профиля, перерисуем её, чтобы кнопка редактирования отобразилась или скрылась
-    if (currentPage === 'member-profile' && currentProfileId) {
-        renderMemberProfile(currentProfileId);
-    }
 }
 
 function showModal() { loginModal.classList.add('show'); }
@@ -179,7 +175,7 @@ function renderCurrentPage() {
     }
 }
 
-// ==================== Материалы (CRUD) ====================
+// ==================== Материалы ====================
 function renderMaterials() {
     const grid = document.getElementById('materialsGrid');
     if (materials.length === 0) {
@@ -326,7 +322,7 @@ function deleteMember(id) {
         team = team.filter(m => m.id !== id);
         saveTeam();
         if (currentPage === 'member-profile' && currentProfileId === id) {
-            switchPage('team'); // если удалили открытого участника, возвращаемся к списку
+            switchPage('team');
         } else {
             renderTeam();
         }
@@ -358,7 +354,6 @@ document.getElementById('memberForm')?.addEventListener('submit', (e) => {
         team.push({ id: Date.now().toString(), name, role, photo, bio, social });
     }
     saveTeam();
-    // Если профиль этого участника открыт, обновляем его
     if (currentPage === 'member-profile' && currentProfileId === id) {
         renderMemberProfile(id);
     } else {
@@ -367,41 +362,27 @@ document.getElementById('memberForm')?.addEventListener('submit', (e) => {
     document.getElementById('memberFormContainer').style.display = 'none';
 });
 
-// ==================== Профиль участника ====================
+// ==================== Профиль участника (без кнопки редактирования) ====================
 function showMemberProfile(memberId) {
     currentProfileId = memberId;
-    switchPage('member-profile');
     renderMemberProfile(memberId);
+    switchPage('member-profile');
 }
 
 function renderMemberProfile(memberId) {
     const member = team.find(m => m.id === memberId);
     if (!member) return;
     const container = document.getElementById('memberProfileContent');
-    let html = `
+    const html = `
         <div class="profile-container">
             ${member.photo ? `<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name)}" class="profile-photo">` : '<div class="profile-photo" style="background:#333; display:flex; align-items:center; justify-content:center;">Нет фото</div>'}
             <h2 class="profile-name">${escapeHtml(member.name)}</h2>
             <div class="profile-role">${escapeHtml(member.role)}</div>
             <div class="profile-bio"><strong>Биография:</strong><br>${escapeHtml(member.bio || 'Не указана')}</div>
             <div class="profile-social"><strong>Социальные сети:</strong><br>${formatSocialLinks(member.social)}</div>
+        </div>
     `;
-    // Добавляем кнопку редактирования, если админ
-    if (isAdmin) {
-        html += `<button class="edit-profile-btn" id="editProfileBtn">✎ Редактировать профиль</button>`;
-    }
-    html += `</div>`;
     container.innerHTML = html;
-
-    // Привязываем обработчик к кнопке редактирования
-    if (isAdmin) {
-        const editBtn = document.getElementById('editProfileBtn');
-        if (editBtn) {
-            editBtn.addEventListener('click', () => {
-                editMember(memberId);
-            });
-        }
-    }
 }
 
 function formatSocialLinks(socialStr) {
