@@ -107,34 +107,7 @@ async function saveContacts() {
     await window.set(window.ref(window.db, 'contacts'), contacts);
 }
 
-// ==================== Авторизация ====================
-function checkAuth() {
-    const auth = localStorage.getItem('totAuth');
-    isAdmin = auth === 'true';
-    updateAuthUI();
-    renderCurrentPage();
-}
-
-function login(username, password) {
-    if (username === 'totdub' && password === 'totdub2026') {
-        localStorage.setItem('totAuth', 'true');
-        isAdmin = true;
-        updateAuthUI();
-        hideModal();
-        renderCurrentPage();
-    } else {
-        alert('Неверный логин или пароль');
-    }
-}
-
-function logout() {
-    localStorage.removeItem('totAuth');
-    isAdmin = false;
-    updateAuthUI();
-    hideAllForms();
-    renderCurrentPage();
-}
-
+// ==================== Авторизация через Firebase Auth ====================
 function updateAuthUI() {
     if (isAdmin) {
         loginBtn.style.display = 'none';
@@ -146,6 +119,32 @@ function updateAuthUI() {
         Object.values(adminControls).forEach(el => { if (el) el.style.display = 'none'; });
     }
 }
+
+async function login(email, password) {
+    try {
+        await window.signInWithEmailAndPassword(window.auth, email, password);
+        // isAdmin обновится через onAuthStateChanged
+    } catch (error) {
+        alert('Ошибка входа: ' + error.message);
+    }
+}
+
+async function logout() {
+    await window.signOut(window.auth);
+}
+
+// Следим за состоянием аутентификации
+window.onAuthStateChanged(window.auth, (user) => {
+    if (user) {
+        // Пользователь вошёл
+        isAdmin = true;
+    } else {
+        // Пользователь вышел
+        isAdmin = false;
+    }
+    updateAuthUI();
+    renderCurrentPage();
+});
 
 function showModal() { loginModal.classList.add('show'); }
 function hideModal() { loginModal.classList.remove('show'); }
@@ -536,7 +535,7 @@ function escapeHtml(unsafe) {
 // ==================== Инициализация ====================
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAllData();
-    checkAuth();
+    // onAuthStateChanged уже установлен, он обновит UI
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -552,9 +551,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const username = document.getElementById('username').value;
+        const email = document.getElementById('username').value;
         const password = document.getElementById('password').value;
-        login(username, password);
+        login(email, password);
+        hideModal();
     });
 
     switchPage('materials');
