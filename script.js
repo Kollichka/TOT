@@ -1,10 +1,4 @@
 // ==================== Глобальные переменные ====================
-const STORAGE_MATERIALS = 'totMaterials';
-const STORAGE_TEAM = 'totTeam';
-const STORAGE_PROJECTS = 'totProjects';
-const STORAGE_CONTACTS = 'totContacts';
-const STORAGE_AUTH = 'totAuth';
-
 let currentPage = 'materials';
 let materials = [];
 let team = [];
@@ -35,70 +29,96 @@ const loginModal = document.getElementById('loginModal');
 const closeModal = document.querySelector('.close');
 const loginForm = document.getElementById('loginForm');
 
-// ==================== Загрузка и сохранение ====================
-function loadAllData() {
-    // Материалы
-    const storedMaterials = localStorage.getItem(STORAGE_MATERIALS);
-    if (storedMaterials) {
-        materials = JSON.parse(storedMaterials);
-    } else {
-        materials = [
-            { id: '1', title: 'Дубляж трейлера "Проект Z"', type: 'Видео', description: 'Готовая озвучка трейлера с участием трёх актёров. Дорожка 5.1.', link: '#' },
-            { id: '2', title: 'Фоновая музыка для сцены', type: 'Аудио', description: 'Трек в стиле эмбиент, длительность 3:45.', link: '#' },
-            { id: '3', title: 'Сценарий эпизода 4', type: 'Текст', description: 'Финальная версия сценария с разметкой по ролям.', link: '#' },
-            { id: '4', title: 'Запись репетиции', type: 'Видео', description: 'Черновая запись от 12.03.2025.', link: '#' }
-        ];
-        saveMaterials();
-    }
+// ==================== Работа с Firebase ====================
+// Функция загрузки всех данных из Firebase
+async function loadAllData() {
+    try {
+        const db = window.db;
+        const ref = window.ref;
+        const get = window.get;
 
-    // Команда
-    const storedTeam = localStorage.getItem(STORAGE_TEAM);
-    if (storedTeam) {
-        team = JSON.parse(storedTeam);
-    } else {
-        team = [
-            { id: '1', name: 'Анна Смирнова', role: 'Режиссёр дубляжа', photo: '', bio: 'Опыт работы более 10 лет.', social: 'https://vk.com/anna\nhttps://t.me/anna' },
-            { id: '2', name: 'Пётр Иванов', role: 'Актёр озвучки', photo: '', bio: 'Голос главного героя в 30+ проектах.', social: 'https://vk.com/petr' },
-            { id: '3', name: 'Елена Петрова', role: 'Звукорежиссёр', photo: '', bio: 'Специалист по обработке аудио.', social: '' }
-        ];
-        saveTeam();
-    }
+        // Загружаем материалы
+        const materialsSnap = await get(ref(db, 'materials'));
+        if (materialsSnap.exists()) {
+            materials = materialsSnap.val();
+        } else {
+            // Начальные данные
+            materials = [
+                { id: '1', title: 'Дубляж трейлера "Проект Z"', type: 'Видео', description: 'Готовая озвучка трейлера с участием трёх актёров. Дорожка 5.1.', link: '#' },
+                { id: '2', title: 'Фоновая музыка для сцены', type: 'Аудио', description: 'Трек в стиле эмбиент, длительность 3:45.', link: '#' },
+                { id: '3', title: 'Сценарий эпизода 4', type: 'Текст', description: 'Финальная версия сценария с разметкой по ролям.', link: '#' },
+                { id: '4', title: 'Запись репетиции', type: 'Видео', description: 'Черновая запись от 12.03.2025.', link: '#' }
+            ];
+            await window.set(ref(db, 'materials'), materials);
+        }
 
-    // Проекты
-    const storedProjects = localStorage.getItem(STORAGE_PROJECTS);
-    if (storedProjects) {
-        projects = JSON.parse(storedProjects);
-    } else {
-        projects = [
-            { id: '1', title: 'Киберпанк 2077', description: 'Полный дубляж игры', date: '2024' },
-            { id: '2', title: 'Аркейн', description: 'Озвучка второго сезона', date: '2025' },
-            { id: '3', title: 'Хоббит', description: 'Новая версия', date: '2023' }
-        ];
-        saveProjects();
-    }
+        // Загружаем команду
+        const teamSnap = await get(ref(db, 'team'));
+        if (teamSnap.exists()) {
+            team = teamSnap.val();
+        } else {
+            team = [
+                { id: '1', name: 'Анна Смирнова', role: 'Режиссёр дубляжа', photo: '', bio: 'Опыт работы более 10 лет.', social: 'https://vk.com/anna\nhttps://t.me/anna' },
+                { id: '2', name: 'Пётр Иванов', role: 'Актёр озвучки', photo: '', bio: 'Голос главного героя в 30+ проектах.', social: 'https://vk.com/petr' },
+                { id: '3', name: 'Елена Петрова', role: 'Звукорежиссёр', photo: '', bio: 'Специалист по обработке аудио.', social: '' }
+            ];
+            await window.set(ref(db, 'team'), team);
+        }
 
-    // Контакты
-    const storedContacts = localStorage.getItem(STORAGE_CONTACTS);
-    if (storedContacts) {
-        contacts = JSON.parse(storedContacts);
-    } else {
-        contacts = {
-            email: 'tot.dub@example.com',
-            social: 'https://vk.com/tot, https://t.me/tot_dub',
-            other: 'По всем вопросам пишите на почту или в Telegram.'
-        };
-        saveContacts();
+        // Загружаем проекты
+        const projectsSnap = await get(ref(db, 'projects'));
+        if (projectsSnap.exists()) {
+            projects = projectsSnap.val();
+        } else {
+            projects = [
+                { id: '1', title: 'Киберпанк 2077', description: 'Полный дубляж игры', date: '2024' },
+                { id: '2', title: 'Аркейн', description: 'Озвучка второго сезона', date: '2025' },
+                { id: '3', title: 'Хоббит', description: 'Новая версия', date: '2023' }
+            ];
+            await window.set(ref(db, 'projects'), projects);
+        }
+
+        // Загружаем контакты
+        const contactsSnap = await get(ref(db, 'contacts'));
+        if (contactsSnap.exists()) {
+            contacts = contactsSnap.val();
+        } else {
+            contacts = {
+                email: 'tot.dub@example.com',
+                social: 'https://vk.com/tot, https://t.me/tot_dub',
+                other: 'По всем вопросам пишите на почту или в Telegram.'
+            };
+            await window.set(ref(db, 'contacts'), contacts);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+        alert('Не удалось загрузить данные. Проверьте интернет-соединение и настройки Firebase.');
     }
 }
 
-function saveMaterials() { localStorage.setItem(STORAGE_MATERIALS, JSON.stringify(materials)); }
-function saveTeam() { localStorage.setItem(STORAGE_TEAM, JSON.stringify(team)); }
-function saveProjects() { localStorage.setItem(STORAGE_PROJECTS, JSON.stringify(projects)); }
-function saveContacts() { localStorage.setItem(STORAGE_CONTACTS, JSON.stringify(contacts)); }
+// Сохранение материалов в Firebase
+async function saveMaterials() {
+    await window.set(window.ref(window.db, 'materials'), materials);
+}
+
+// Сохранение команды
+async function saveTeam() {
+    await window.set(window.ref(window.db, 'team'), team);
+}
+
+// Сохранение проектов
+async function saveProjects() {
+    await window.set(window.ref(window.db, 'projects'), projects);
+}
+
+// Сохранение контактов
+async function saveContacts() {
+    await window.set(window.ref(window.db, 'contacts'), contacts);
+}
 
 // ==================== Авторизация ====================
 function checkAuth() {
-    const auth = localStorage.getItem(STORAGE_AUTH);
+    const auth = localStorage.getItem('totAuth');
     isAdmin = auth === 'true';
     updateAuthUI();
     renderCurrentPage();
@@ -106,7 +126,7 @@ function checkAuth() {
 
 function login(username, password) {
     if (username === 'totdub' && password === 'totdub2026') {
-        localStorage.setItem(STORAGE_AUTH, 'true');
+        localStorage.setItem('totAuth', 'true');
         isAdmin = true;
         updateAuthUI();
         hideModal();
@@ -117,7 +137,7 @@ function login(username, password) {
 }
 
 function logout() {
-    localStorage.removeItem(STORAGE_AUTH);
+    localStorage.removeItem('totAuth');
     isAdmin = false;
     updateAuthUI();
     hideAllForms();
@@ -178,7 +198,7 @@ function renderCurrentPage() {
 // ==================== Материалы ====================
 function renderMaterials() {
     const grid = document.getElementById('materialsGrid');
-    if (materials.length === 0) {
+    if (!materials.length) {
         grid.innerHTML = '<div class="empty-message">Пока нет материалов</div>';
         return;
     }
@@ -224,10 +244,10 @@ function editMaterial(id) {
     document.getElementById('materialFormContainer').style.display = 'block';
 }
 
-function deleteMaterial(id) {
+async function deleteMaterial(id) {
     if (confirm('Удалить материал?')) {
         materials = materials.filter(m => m.id !== id);
-        saveMaterials();
+        await saveMaterials();
         renderMaterials();
     }
 }
@@ -241,7 +261,7 @@ document.getElementById('addMaterialBtn')?.addEventListener('click', () => {
 document.getElementById('cancelMaterial')?.addEventListener('click', () => {
     document.getElementById('materialFormContainer').style.display = 'none';
 });
-document.getElementById('materialForm')?.addEventListener('submit', (e) => {
+document.getElementById('materialForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('materialId').value;
     const title = document.getElementById('materialTitle').value.trim();
@@ -255,7 +275,7 @@ document.getElementById('materialForm')?.addEventListener('submit', (e) => {
     } else {
         materials.push({ id: Date.now().toString(), title, type, description: desc, link });
     }
-    saveMaterials();
+    await saveMaterials();
     renderMaterials();
     document.getElementById('materialFormContainer').style.display = 'none';
 });
@@ -263,7 +283,7 @@ document.getElementById('materialForm')?.addEventListener('submit', (e) => {
 // ==================== Команда ====================
 function renderTeam() {
     const grid = document.getElementById('teamGrid');
-    if (team.length === 0) {
+    if (!team.length) {
         grid.innerHTML = '<div class="empty-message">Команда пока не добавлена</div>';
         return;
     }
@@ -285,7 +305,6 @@ function renderTeam() {
     });
     grid.innerHTML = html;
 
-    // Клик по карточке для перехода в профиль
     document.querySelectorAll('.team-card').forEach(card => {
         const memberId = card.dataset.id;
         card.addEventListener('click', (e) => {
@@ -317,10 +336,10 @@ function editMember(id) {
     document.getElementById('memberFormContainer').style.display = 'block';
 }
 
-function deleteMember(id) {
+async function deleteMember(id) {
     if (confirm('Удалить участника?')) {
         team = team.filter(m => m.id !== id);
-        saveTeam();
+        await saveTeam();
         if (currentPage === 'member-profile' && currentProfileId === id) {
             switchPage('team');
         } else {
@@ -338,7 +357,7 @@ document.getElementById('addMemberBtn')?.addEventListener('click', () => {
 document.getElementById('cancelMember')?.addEventListener('click', () => {
     document.getElementById('memberFormContainer').style.display = 'none';
 });
-document.getElementById('memberForm')?.addEventListener('submit', (e) => {
+document.getElementById('memberForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('memberId').value;
     const name = document.getElementById('memberName').value.trim();
@@ -353,7 +372,7 @@ document.getElementById('memberForm')?.addEventListener('submit', (e) => {
     } else {
         team.push({ id: Date.now().toString(), name, role, photo, bio, social });
     }
-    saveTeam();
+    await saveTeam();
     if (currentPage === 'member-profile' && currentProfileId === id) {
         renderMemberProfile(id);
     } else {
@@ -362,7 +381,7 @@ document.getElementById('memberForm')?.addEventListener('submit', (e) => {
     document.getElementById('memberFormContainer').style.display = 'none';
 });
 
-// ==================== Профиль участника (без кнопки редактирования) ====================
+// ==================== Профиль участника ====================
 function showMemberProfile(memberId) {
     currentProfileId = memberId;
     renderMemberProfile(memberId);
@@ -388,11 +407,10 @@ function renderMemberProfile(memberId) {
 function formatSocialLinks(socialStr) {
     if (!socialStr) return '—';
     const links = socialStr.split('\n').filter(l => l.trim());
-    if (links.length === 0) return '—';
+    if (!links.length) return '—';
     return links.map(link => `<a href="${link.trim()}" target="_blank">${link.trim()}</a>`).join('<br>');
 }
 
-// Кнопка "Назад к команде"
 document.getElementById('backToTeamBtn').addEventListener('click', () => {
     switchPage('team');
 });
@@ -400,7 +418,7 @@ document.getElementById('backToTeamBtn').addEventListener('click', () => {
 // ==================== Проекты ====================
 function renderProjects() {
     const grid = document.getElementById('projectsGrid');
-    if (projects.length === 0) {
+    if (!projects.length) {
         grid.innerHTML = '<div class="empty-message">Проектов пока нет</div>';
         return;
     }
@@ -442,10 +460,10 @@ function editProject(id) {
     document.getElementById('projectFormContainer').style.display = 'block';
 }
 
-function deleteProject(id) {
+async function deleteProject(id) {
     if (confirm('Удалить проект?')) {
         projects = projects.filter(p => p.id !== id);
-        saveProjects();
+        await saveProjects();
         renderProjects();
     }
 }
@@ -459,7 +477,7 @@ document.getElementById('addProjectBtn')?.addEventListener('click', () => {
 document.getElementById('cancelProject')?.addEventListener('click', () => {
     document.getElementById('projectFormContainer').style.display = 'none';
 });
-document.getElementById('projectForm')?.addEventListener('submit', (e) => {
+document.getElementById('projectForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('projectId').value;
     const title = document.getElementById('projectTitle').value.trim();
@@ -472,7 +490,7 @@ document.getElementById('projectForm')?.addEventListener('submit', (e) => {
     } else {
         projects.push({ id: Date.now().toString(), title, description: desc, date });
     }
-    saveProjects();
+    await saveProjects();
     renderProjects();
     document.getElementById('projectFormContainer').style.display = 'none';
 });
@@ -502,12 +520,12 @@ document.getElementById('editContactsBtn')?.addEventListener('click', () => {
 document.getElementById('cancelContacts')?.addEventListener('click', () => {
     document.getElementById('contactsFormContainer').style.display = 'none';
 });
-document.getElementById('contactsForm')?.addEventListener('submit', (e) => {
+document.getElementById('contactsForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     contacts.email = document.getElementById('contactEmail').value.trim();
     contacts.social = document.getElementById('contactSocial').value.trim();
     contacts.other = document.getElementById('contactOther').value.trim();
-    saveContacts();
+    await saveContacts();
     renderContacts();
     document.getElementById('contactsFormContainer').style.display = 'none';
 });
@@ -525,9 +543,9 @@ function escapeHtml(unsafe) {
 }
 
 // ==================== Инициализация ====================
-document.addEventListener('DOMContentLoaded', () => {
-    loadAllData();
-    checkAuth();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadAllData();   // загружаем данные из Firebase
+    checkAuth();           // проверяем авторизацию (localStorage)
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
