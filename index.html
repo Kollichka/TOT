@@ -5,201 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TOT | Команда дубляжа</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Импортируйте Firebase SDK (версия 9+)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Ваша конфигурация Firebase (скопируйте из консоли)
+        const firebaseConfig = {
+            apiKey: "ВАШ_API_KEY",
+            authDomain: "ВАШ_AUTH_DOMAIN",
+            databaseURL: "ВАШ_DATABASE_URL",
+            projectId: "ВАШ_PROJECT_ID",
+            storageBucket: "ВАШ_STORAGE_BUCKET",
+            messagingSenderId: "ВАШ_SENDER_ID",
+            appId: "ВАШ_APP_ID"
+        };
+
+        // Инициализация
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Сохраняем объект db в глобальную переменную, чтобы использовать в script.js
+        window.db = db;
+        window.ref = ref;
+        window.set = set;
+        window.get = get;
+        window.child = child;
+        window.update = update;
+        window.remove = remove;
+    </script>
+    <script type="module" src="script.js"></script>
 </head>
 <body>
-    <header>
-        <div class="container header-content">
-            <div class="logo">
-                <h1>TOT<span> DUB</span></h1>
-            </div>
-            <nav>
-                <ul id="nav-menu">
-                    <li><a href="#materials" class="active" data-page="materials">Материалы</a></li>
-                    <li><a href="#team" data-page="team">Команда</a></li>
-                    <li><a href="#projects" data-page="projects">Проекты</a></li>
-                    <li><a href="#contacts" data-page="contacts">Контакты</a></li>
-                </ul>
-            </nav>
-            <div class="auth-area">
-                <button id="loginBtn" class="auth-btn">Войти</button>
-                <button id="logoutBtn" class="auth-btn" style="display: none;">Выйти</button>
-            </div>
-        </div>
-    </header>
-
-    <main class="container">
-        <!-- Страница МАТЕРИАЛЫ -->
-        <section id="materials-page" class="page active-page">
-            <h2 class="section-title">Библиотека материалов</h2>
-            <div class="materials-grid" id="materialsGrid"></div>
-            <div class="admin-controls" id="materialsAdmin" style="display: none;">
-                <button class="add-button" id="addMaterialBtn">+ Добавить материал</button>
-            </div>
-            <div class="add-form" id="materialFormContainer" style="display: none;">
-                <h3 id="materialFormTitle">Новый материал</h3>
-                <form id="materialForm">
-                    <input type="hidden" id="materialId">
-                    <div class="form-group">
-                        <label for="materialTitle">Название</label>
-                        <input type="text" id="materialTitle" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="materialType">Тип</label>
-                        <select id="materialType" required>
-                            <option value="Видео">Видео</option>
-                            <option value="Аудио">Аудио</option>
-                            <option value="Текст">Текст</option>
-                            <option value="Другое">Другое</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="materialDesc">Описание</label>
-                        <textarea id="materialDesc" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="materialLink">Ссылка</label>
-                        <input type="url" id="materialLink" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelMaterial">Отмена</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- Страница КОМАНДА -->
-        <section id="team-page" class="page">
-            <h2 class="section-title">Наша команда</h2>
-            <div class="team-grid" id="teamGrid"></div>
-            <div class="admin-controls" id="teamAdmin" style="display: none;">
-                <button class="add-button" id="addMemberBtn">+ Добавить участника</button>
-            </div>
-            <div class="add-form" id="memberFormContainer" style="display: none;">
-                <h3 id="memberFormTitle">Новый участник</h3>
-                <form id="memberForm">
-                    <input type="hidden" id="memberId">
-                    <div class="form-group">
-                        <label for="memberName">Имя</label>
-                        <input type="text" id="memberName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="memberRole">Роль</label>
-                        <input type="text" id="memberRole" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="memberPhoto">Ссылка на фото (опционально)</label>
-                        <input type="url" id="memberPhoto" placeholder="https://...">
-                    </div>
-                    <div class="form-group">
-                        <label for="memberBio">Биография</label>
-                        <textarea id="memberBio" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="memberSocial">Социальные сети (по одной на строку)</label>
-                        <textarea id="memberSocial" rows="2" placeholder="https://vk.com/...&#10;https://t.me/..."></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelMember">Отмена</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- Страница ПРОЕКТЫ -->
-        <section id="projects-page" class="page">
-            <h2 class="section-title">Наши проекты</h2>
-            <div class="projects-grid" id="projectsGrid"></div>
-            <div class="admin-controls" id="projectsAdmin" style="display: none;">
-                <button class="add-button" id="addProjectBtn">+ Добавить проект</button>
-            </div>
-            <div class="add-form" id="projectFormContainer" style="display: none;">
-                <h3 id="projectFormTitle">Новый проект</h3>
-                <form id="projectForm">
-                    <input type="hidden" id="projectId">
-                    <div class="form-group">
-                        <label for="projectTitle">Название</label>
-                        <input type="text" id="projectTitle" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="projectDesc">Описание</label>
-                        <textarea id="projectDesc" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="projectDate">Дата</label>
-                        <input type="text" id="projectDate" placeholder="2025" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelProject">Отмена</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- Страница КОНТАКТЫ -->
-        <section id="contacts-page" class="page">
-            <h2 class="section-title">Контакты</h2>
-            <div class="contacts-content" id="contactsContent"></div>
-            <div class="admin-controls" id="contactsAdmin" style="display: none;">
-                <button class="add-button" id="editContactsBtn">Редактировать контакты</button>
-            </div>
-            <div class="add-form" id="contactsFormContainer" style="display: none;">
-                <h3>Редактировать контакты</h3>
-                <form id="contactsForm">
-                    <div class="form-group">
-                        <label for="contactEmail">Email</label>
-                        <input type="email" id="contactEmail" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="contactSocial">Социальные сети (через запятую)</label>
-                        <input type="text" id="contactSocial" placeholder="https://vk.com/..., https://t.me/...">
-                    </div>
-                    <div class="form-group">
-                        <label for="contactOther">Дополнительно</label>
-                        <textarea id="contactOther" placeholder="Другая информация"></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelContacts">Отмена</button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- Страница ПРОФИЛЬ УЧАСТНИКА (без кнопки редактирования) -->
-        <section id="member-profile-page" class="page">
-            <button class="back-button" id="backToTeamBtn">← Назад к команде</button>
-            <div id="memberProfileContent"></div>
-        </section>
-
-        <!-- Модальное окно авторизации (без подсказки) -->
-        <div id="loginModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>Вход для администратора</h2>
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="username">Логин</label>
-                        <input type="text" id="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Пароль</label>
-                        <input type="password" id="password" required>
-                    </div>
-                    <button type="submit" class="submit-btn">Войти</button>
-                </form>
-            </div>
-        </div>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>© 2025 TOT — команда дубляжа. Все права защищены.</p>
-        </div>
-    </footer>
-
-    <script src="script.js"></script>
+    ... (остальной HTML такой же, как в предыдущей версии)
 </body>
 </html>
