@@ -106,7 +106,7 @@ function checkAuth() {
 }
 
 function login(username, password) {
-    if (username === 'admin' && password === 'admin') {
+    if (username === 'totdub' && password === 'totdub2026') {
         localStorage.setItem(STORAGE_AUTH, 'true');
         isAdmin = true;
         updateAuthUI();
