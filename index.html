@@ -28,14 +28,13 @@
     </header>
 
     <main class="container">
-        <!-- Страница МАТЕРИАЛЫ (видна по умолчанию) -->
+        <!-- Страница МАТЕРИАЛЫ -->
         <section id="materials-page" class="page active-page">
             <h2 class="section-title">Библиотека материалов</h2>
             <div class="materials-grid" id="materialsGrid"></div>
             <div class="admin-controls" id="materialsAdmin" style="display: none;">
                 <button class="add-button" id="addMaterialBtn">+ Добавить материал</button>
             </div>
-            <!-- Форма материала (будет показываться при добавлении/редактировании) -->
             <div class="add-form" id="materialFormContainer" style="display: none;">
                 <h3 id="materialFormTitle">Новый материал</h3>
                 <form id="materialForm">
@@ -76,7 +75,6 @@
             <div class="admin-controls" id="teamAdmin" style="display: none;">
                 <button class="add-button" id="addMemberBtn">+ Добавить участника</button>
             </div>
-            <!-- Форма участника -->
             <div class="add-form" id="memberFormContainer" style="display: none;">
                 <h3 id="memberFormTitle">Новый участник</h3>
                 <form id="memberForm">
@@ -93,6 +91,14 @@
                         <label for="memberPhoto">Ссылка на фото (опционально)</label>
                         <input type="url" id="memberPhoto" placeholder="https://...">
                     </div>
+                    <div class="form-group">
+                        <label for="memberBio">Биография</label>
+                        <textarea id="memberBio" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="memberSocial">Социальные сети (по одной на строку)</label>
+                        <textarea id="memberSocial" rows="2" placeholder="https://vk.com/...&#10;https://t.me/..."></textarea>
+                    </div>
                     <div class="form-actions">
                         <button type="submit" class="submit-btn">Сохранить</button>
                         <button type="button" class="cancel-btn" id="cancelMember">Отмена</button>
@@ -108,7 +114,6 @@
             <div class="admin-controls" id="projectsAdmin" style="display: none;">
                 <button class="add-button" id="addProjectBtn">+ Добавить проект</button>
             </div>
-            <!-- Форма проекта -->
             <div class="add-form" id="projectFormContainer" style="display: none;">
                 <h3 id="projectFormTitle">Новый проект</h3>
                 <form id="projectForm">
@@ -140,7 +145,6 @@
             <div class="admin-controls" id="contactsAdmin" style="display: none;">
                 <button class="add-button" id="editContactsBtn">Редактировать контакты</button>
             </div>
-            <!-- Форма контактов -->
             <div class="add-form" id="contactsFormContainer" style="display: none;">
                 <h3>Редактировать контакты</h3>
                 <form id="contactsForm">
@@ -164,6 +168,15 @@
             </div>
         </section>
 
+        <!-- Страница ПРОФИЛЬ УЧАСТНИКА -->
+        <section id="member-profile-page" class="page">
+            <button class="back-button" id="backToTeamBtn">← Назад к команде</button>
+            <div id="memberProfileContent"></div>
+            <div class="admin-controls" id="profileAdmin" style="display: none;">
+                <button class="add-button" id="editProfileBtn">Редактировать профиль</button>
+            </div>
+        </section>
+
         <!-- Модальное окно авторизации -->
         <div id="loginModal" class="modal">
             <div class="modal-content">
@@ -180,13 +193,14 @@
                     </div>
                     <button type="submit" class="submit-btn">Войти</button>
                 </form>
+                <p style="margin-top:15px; color:#888;">Подсказка: admin / admin</p>
             </div>
         </div>
     </main>
 
     <footer>
         <div class="container">
-            <p>© 2026 TOT — команда дубляжа. Все права защищены.</p>
+            <p>© 2025 TOT — команда дубляжа. Все права защищены.</p>
         </div>
     </footer>
 
