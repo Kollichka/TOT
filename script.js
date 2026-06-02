@@ -51,9 +51,6 @@ async function loadAllData() {
             team = teamSnap.val();
         } else {
             team = [
-                { id: '1', name: 'Анна Смирнова', role: 'Режиссёр дубляжа', photo: '', bio: 'Опыт работы более 10 лет.', social: 'https://vk.com/anna\nhttps://t.me/anna' },
-                { id: '2', name: 'Пётр Иванов', role: 'Актёр озвучки', photo: '', bio: 'Голос главного героя в 30+ проектах.', social: 'https://vk.com/petr' },
-                { id: '3', name: 'Елена Петрова', role: 'Звукорежиссёр', photo: '', bio: 'Специалист по обработке аудио.', social: '' }
             ];
             await window.set(ref(db, 'team'), team);
         }
