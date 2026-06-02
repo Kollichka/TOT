@@ -3,7 +3,6 @@
     padding: 0;
     box-sizing: border-box;
 }
-
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: #0a0a0a;
@@ -13,14 +12,12 @@ body {
     display: flex;
     flex-direction: column;
 }
-
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
     width: 100%;
 }
-
 header {
     background-color: #000000;
     border-bottom: 2px solid #2ecc71;
@@ -29,7 +26,6 @@ header {
     top: 0;
     z-index: 100;
 }
-
 .header-content {
     display: flex;
     justify-content: space-between;
@@ -37,23 +33,19 @@ header {
     flex-wrap: wrap;
     gap: 15px;
 }
-
 .logo h1 {
     font-size: 1.8rem;
     font-weight: 600;
     letter-spacing: 1px;
 }
-
 .logo span {
     color: #2ecc71;
 }
-
 nav ul {
     display: flex;
     list-style: none;
     gap: 30px;
 }
-
 nav a {
     color: #ffffff;
     text-decoration: none;
@@ -63,18 +55,14 @@ nav a {
     padding-bottom: 5px;
     border-bottom: 2px solid transparent;
 }
-
-nav a:hover,
-nav a.active {
+nav a:hover, nav a.active {
     color: #2ecc71;
     border-bottom-color: #2ecc71;
 }
-
 .auth-area {
     display: flex;
     gap: 10px;
 }
-
 .auth-btn {
     background: transparent;
     border: 1px solid #2ecc71;
@@ -85,25 +73,20 @@ nav a.active {
     font-weight: 500;
     transition: all 0.3s ease;
 }
-
 .auth-btn:hover {
     background-color: #2ecc71;
     color: #000000;
 }
-
 main {
     flex: 1;
     padding: 40px 0;
 }
-
 .page {
     display: none;
 }
-
 .page.active-page {
     display: block;
 }
-
 .section-title {
     font-size: 2rem;
     font-weight: 500;
@@ -111,7 +94,6 @@ main {
     position: relative;
     display: inline-block;
 }
-
 .section-title::after {
     content: '';
     display: block;
@@ -120,17 +102,13 @@ main {
     background-color: #2ecc71;
     margin-top: 8px;
 }
-
-.materials-grid {
+.materials-grid, .team-grid, .projects-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 25px;
     margin-bottom: 30px;
 }
-
-.material-card,
-.team-card,
-.project-card {
+.material-card, .team-card, .project-card {
     background-color: #1a1a1a;
     border: 1px solid #333;
     border-radius: 4px;
@@ -140,44 +118,31 @@ main {
     flex-direction: column;
     position: relative;
 }
-
-.material-card:hover,
-.team-card:hover,
-.project-card:hover {
+.material-card:hover, .team-card:hover, .project-card:hover {
     transform: translateY(-4px);
     border-color: #2ecc71;
 }
-
-.material-type,
-.team-role {
+.material-type, .team-role {
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #2ecc71;
     margin-bottom: 10px;
 }
-
-.material-title,
-.team-name,
-.project-title {
+.material-title, .team-name, .project-title {
     font-size: 1.3rem;
     font-weight: 600;
     margin-bottom: 10px;
     color: #ffffff;
     padding-right: 40px;
 }
-
-.material-description,
-.team-bio,
-.project-description {
+.material-description, .team-bio, .project-description {
     font-size: 0.95rem;
     color: #cccccc;
     margin-bottom: 20px;
     flex: 1;
 }
-
-.material-link,
-.team-link {
+.material-link {
     display: inline-block;
     padding: 8px 16px;
     background-color: transparent;
@@ -191,13 +156,10 @@ main {
     border-radius: 3px;
     align-self: flex-start;
 }
-
-.material-link:hover,
-.team-link:hover {
+.material-link:hover {
     background-color: #2ecc71;
     color: #000000;
 }
-
 .team-photo {
     width: 100%;
     height: 180px;
@@ -210,15 +172,6 @@ main {
     justify-content: center;
     color: #666;
 }
-
-.team-grid,
-.projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 25px;
-    margin-bottom: 30px;
-}
-
 .card-actions {
     position: absolute;
     top: 15px;
@@ -226,7 +179,6 @@ main {
     display: flex;
     gap: 8px;
 }
-
 .card-actions button {
     background: none;
     border: none;
@@ -237,12 +189,10 @@ main {
     transition: background-color 0.2s;
     color: #888;
 }
-
 .card-actions button:hover {
     background-color: #333;
     color: #2ecc71;
 }
-
 .empty-message {
     grid-column: 1 / -1;
     text-align: center;
@@ -253,7 +203,6 @@ main {
     color: #888;
     font-size: 1.1rem;
 }
-
 .add-button {
     background-color: #2ecc71;
     color: #000000;
@@ -269,11 +218,9 @@ main {
     margin-bottom: 30px;
     border: 1px solid #2ecc71;
 }
-
 .add-button:hover {
     opacity: 0.9;
 }
-
 .add-form {
     background-color: #1a1a1a;
     border: 1px solid #333;
@@ -281,11 +228,9 @@ main {
     margin-bottom: 40px;
     border-radius: 4px;
 }
-
 .form-group {
     margin-bottom: 20px;
 }
-
 .form-group label {
     display: block;
     margin-bottom: 8px;
@@ -295,10 +240,7 @@ main {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-
-.form-group input,
-.form-group select,
-.form-group textarea {
+.form-group input, .form-group select, .form-group textarea {
     width: 100%;
     padding: 12px 15px;
     background-color: #0a0a0a;
@@ -309,25 +251,19 @@ main {
     border-radius: 3px;
     transition: border-color 0.3s ease;
 }
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
     outline: none;
     border-color: #2ecc71;
 }
-
 .form-group textarea {
     min-height: 100px;
     resize: vertical;
 }
-
 .form-actions {
     display: flex;
     gap: 15px;
     align-items: center;
 }
-
 .submit-btn {
     background-color: #2ecc71;
     color: #000000;
@@ -342,12 +278,10 @@ main {
     border: 1px solid #2ecc71;
     transition: background-color 0.3s ease;
 }
-
 .submit-btn:hover {
     background-color: transparent;
     color: #2ecc71;
 }
-
 .cancel-btn {
     background-color: transparent;
     color: #888;
@@ -361,12 +295,10 @@ main {
     border-radius: 3px;
     transition: all 0.3s ease;
 }
-
 .cancel-btn:hover {
     border-color: #888;
     color: #ffffff;
 }
-
 .contacts-content {
     background-color: #1a1a1a;
     border: 1px solid #333;
@@ -375,20 +307,13 @@ main {
     margin-bottom: 30px;
     line-height: 2;
 }
-
-.contacts-content p {
-    margin-bottom: 10px;
-}
-
 .contacts-content a {
     color: #2ecc71;
     text-decoration: none;
 }
-
 .contacts-content a:hover {
     text-decoration: underline;
 }
-
 .modal {
     display: none;
     position: fixed;
@@ -401,11 +326,9 @@ main {
     align-items: center;
     justify-content: center;
 }
-
 .modal.show {
     display: flex;
 }
-
 .modal-content {
     background-color: #1a1a1a;
     border: 1px solid #2ecc71;
@@ -415,7 +338,6 @@ main {
     width: 90%;
     position: relative;
 }
-
 .close {
     position: absolute;
     top: 15px;
@@ -425,11 +347,9 @@ main {
     font-weight: bold;
     cursor: pointer;
 }
-
 .close:hover {
     color: #2ecc71;
 }
-
 footer {
     background-color: #000000;
     border-top: 2px solid #2ecc71;
@@ -438,7 +358,6 @@ footer {
     color: #888;
     font-size: 0.9rem;
 }
-
 .back-button {
     background-color: transparent;
     border: 1px solid #2ecc71;
@@ -454,7 +373,6 @@ footer {
     background-color: #2ecc71;
     color: #000;
 }
-
 .profile-container {
     background-color: #1a1a1a;
     border: 1px solid #333;
@@ -495,25 +413,9 @@ footer {
 .profile-social a:hover {
     text-decoration: underline;
 }
-
 @media (max-width: 768px) {
-    .header-content {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    nav ul {
-        justify-content: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-
-    .section-title {
-        font-size: 1.8rem;
-    }
-
-    .form-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
+    .header-content { flex-direction: column; text-align: center; }
+    nav ul { justify-content: center; gap: 20px; flex-wrap: wrap; }
+    .section-title { font-size: 1.8rem; }
+    .form-actions { flex-direction: column; align-items: stretch; }
 }
