@@ -27,510 +27,168 @@ const loginModal = document.getElementById('loginModal');
 const closeModal = document.querySelector('.close');
 const loginForm = document.getElementById('loginForm');
 
+// ========== Firebase ==========
 async function loadAllData() {
     try {
-        const db = window.db;
-        const ref = window.ref;
-        const get = window.get;
-
+        const db = window.db, ref = window.ref, get = window.get;
         const materialsSnap = await get(ref(db, 'materials'));
-        if (materialsSnap.exists()) {
-            materials = materialsSnap.val();
-        } else {
-            materials = [
-                { id: '1', title: 'Дубляж трейлера "Проект Z"', type: 'Видео', description: 'Готовая озвучка трейлера с участием трёх актёров. Дорожка 5.1.', link: '#' },
-                { id: '2', title: 'Фоновая музыка для сцены', type: 'Аудио', description: 'Трек в стиле эмбиент, длительность 3:45.', link: '#' },
-                { id: '3', title: 'Сценарий эпизода 4', type: 'Текст', description: 'Финальная версия сценария с разметкой по ролям.', link: '#' },
-                { id: '4', title: 'Запись репетиции', type: 'Видео', description: 'Черновая запись от 12.03.2025.', link: '#' }
-            ];
-            await window.set(ref(db, 'materials'), materials);
-        }
-
+        if (materialsSnap.exists()) materials = materialsSnap.val();
+        else { materials = [/* defaults */]; await window.set(ref(db, 'materials'), materials); }
         const teamSnap = await get(ref(db, 'team'));
-        if (teamSnap.exists()) {
-            team = teamSnap.val();
-        } else {
-            team = [
-            ];
-            await window.set(ref(db, 'team'), team);
-        }
-
+        if (teamSnap.exists()) team = teamSnap.val();
+        else { team = [/* defaults */]; await window.set(ref(db, 'team'), team); }
         const projectsSnap = await get(ref(db, 'projects'));
-        if (projectsSnap.exists()) {
-            projects = projectsSnap.val();
-        } else {
-            projects = [
-                { id: '1', title: 'Киберпанк 2077', description: 'Полный дубляж игры', date: '2024' },
-                { id: '2', title: 'Аркейн', description: 'Озвучка второго сезона', date: '2025' },
-                { id: '3', title: 'Хоббит', description: 'Новая версия', date: '2023' }
-            ];
-            await window.set(ref(db, 'projects'), projects);
-        }
-
+        if (projectsSnap.exists()) projects = projectsSnap.val();
+        else { projects = [/* defaults */]; await window.set(ref(db, 'projects'), projects); }
         const contactsSnap = await get(ref(db, 'contacts'));
-        if (contactsSnap.exists()) {
-            contacts = contactsSnap.val();
-        } else {
-            contacts = {
-                email: 'tot.dub@example.com',
-                social: 'https://vk.com/tot, https://t.me/tot_dub',
-                other: 'По всем вопросам пишите на почту или в Telegram.'
-            };
-            await window.set(ref(db, 'contacts'), contacts);
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
-        alert('Не удалось загрузить данные. Проверьте интернет-соединение и настройки Firebase.');
-    }
+        if (contactsSnap.exists()) contacts = contactsSnap.val();
+        else { contacts = { email: 'tot.dub@example.com', social: 'https://vk.com/tot, https://t.me/tot_dub', other: '' }; await window.set(ref(db, 'contacts'), contacts); }
+    } catch(e) { console.error(e); alert('Ошибка загрузки'); }
 }
+async function saveMaterials() { await window.set(window.ref(window.db, 'materials'), materials); }
+async function saveTeam() { await window.set(window.ref(window.db, 'team'), team); }
+async function saveProjects() { await window.set(window.ref(window.db, 'projects'), projects); }
+async function saveContacts() { await window.set(window.ref(window.db, 'contacts'), contacts); }
 
-async function saveMaterials() {
-    await window.set(window.ref(window.db, 'materials'), materials);
-}
-async function saveTeam() {
-    await window.set(window.ref(window.db, 'team'), team);
-}
-async function saveProjects() {
-    await window.set(window.ref(window.db, 'projects'), projects);
-}
-async function saveContacts() {
-    await window.set(window.ref(window.db, 'contacts'), contacts);
-}
-
-function updateAuthUI() {
-    if (isAdmin) {
-        loginBtn.style.display = 'none';
-        logoutBtn.style.display = 'block';
-        if (adminControls[currentPage]) adminControls[currentPage].style.display = 'block';
-    } else {
-        loginBtn.style.display = 'block';
-        logoutBtn.style.display = 'none';
-        Object.values(adminControls).forEach(el => { if (el) el.style.display = 'none'; });
-    }
-}
-
-async function login(email, password) {
+// Upload photo
+async function uploadMemberPhoto(file, memberId, oldPhotoUrl) {
+    if (!file) return null;
+    if (!file.type.startsWith('image/')) { alert('Файл должен быть изображением'); return null; }
+    if (file.size > 5*1024*1024) { alert('Файл не более 5 МБ'); return null; }
+    const progressSpan = document.getElementById('uploadProgress');
     try {
-        await window.signInWithEmailAndPassword(window.auth, email, password);
-    } catch (error) {
-        alert('Ошибка входа: ' + error.message);
-    }
+        const ext = file.name.split('.').pop();
+        const fileName = `${memberId}_${Date.now()}.${ext}`;
+        const imageRef = window.storageRef(window.storage, `team_photos/${fileName}`);
+        progressSpan.textContent = 'Загрузка...';
+        const snapshot = await window.uploadBytes(imageRef, file);
+        const url = await window.getDownloadURL(snapshot.ref);
+        progressSpan.textContent = 'Готово!';
+        setTimeout(() => progressSpan.textContent = '', 2000);
+        if (oldPhotoUrl && oldPhotoUrl.includes('firebasestorage.googleapis.com')) {
+            try { await window.deleteObject(window.storageRef(window.storage, oldPhotoUrl.split('/o/')[1].split('?')[0])); } catch(e) {}
+        }
+        return url;
+    } catch(e) { alert('Ошибка загрузки: '+e.message); progressSpan.textContent = ''; return null; }
+}
+async function deleteMemberPhoto(photoUrl) {
+    if (!photoUrl || !photoUrl.includes('firebasestorage.googleapis.com')) return;
+    try { await window.deleteObject(window.storageRef(window.storage, decodeURIComponent(photoUrl.split('/o/')[1].split('?')[0]))); } catch(e) {}
 }
 
-async function logout() {
-    await window.signOut(window.auth);
+// Auth
+window.onAuthStateChanged(window.auth, (user) => { isAdmin = !!user; updateAuthUI(); renderCurrentPage(); });
+async function login(email, password) { try { await window.signInWithEmailAndPassword(window.auth, email, password); } catch(e) { alert('Ошибка: '+e.message); } }
+async function logout() { await window.signOut(window.auth); }
+function updateAuthUI() {
+    if (isAdmin) { loginBtn.style.display = 'none'; logoutBtn.style.display = 'block'; if(adminControls[currentPage]) adminControls[currentPage].style.display = 'block'; }
+    else { loginBtn.style.display = 'block'; logoutBtn.style.display = 'none'; Object.values(adminControls).forEach(el=>{if(el)el.style.display='none';}); }
 }
-
-window.onAuthStateChanged(window.auth, (user) => {
-    if (user) {
-        isAdmin = true;
-    } else {
-        isAdmin = false;
-    }
-    updateAuthUI();
-    renderCurrentPage();
-});
-
 function showModal() { loginModal.classList.add('show'); }
 function hideModal() { loginModal.classList.remove('show'); }
-
 function hideAllForms() {
-    document.getElementById('materialFormContainer').style.display = 'none';
-    document.getElementById('memberFormContainer').style.display = 'none';
-    document.getElementById('projectFormContainer').style.display = 'none';
-    document.getElementById('contactsFormContainer').style.display = 'none';
+    ['materialFormContainer','memberFormContainer','projectFormContainer','contactsFormContainer'].forEach(id=>{ const el=document.getElementById(id); if(el)el.style.display='none'; });
+    const prog = document.getElementById('uploadProgress'); if(prog) prog.textContent='';
 }
 
+// Navigation
 function switchPage(pageId) {
-    Object.values(pages).forEach(p => p.classList.remove('active-page'));
-    if (pages[pageId]) pages[pageId].classList.add('active-page');
-
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.dataset.page === pageId) link.classList.add('active');
-    });
-
+    Object.values(pages).forEach(p=>p.classList.remove('active-page'));
+    if(pages[pageId]) pages[pageId].classList.add('active-page');
+    navLinks.forEach(link=>{ link.classList.remove('active'); if(link.dataset.page===pageId) link.classList.add('active'); });
     currentPage = pageId;
     hideAllForms();
     updateAuthUI();
-    if (pageId !== 'member-profile') {
-        currentProfileId = null;
-    }
+    if(pageId !== 'member-profile') currentProfileId = null;
     renderCurrentPage();
 }
-
 function renderCurrentPage() {
-    switch (currentPage) {
-        case 'materials': renderMaterials(); break;
-        case 'team': renderTeam(); break;
-        case 'projects': renderProjects(); break;
-        case 'contacts': renderContacts(); break;
-        case 'member-profile': if (currentProfileId) renderMemberProfile(currentProfileId); break;
-    }
+    if(currentPage==='materials') renderMaterials();
+    else if(currentPage==='team') renderTeam();
+    else if(currentPage==='projects') renderProjects();
+    else if(currentPage==='contacts') renderContacts();
+    else if(currentPage==='member-profile' && currentProfileId) renderMemberProfile(currentProfileId);
 }
 
+// Materials
 function renderMaterials() {
     const grid = document.getElementById('materialsGrid');
-    if (!materials.length) {
-        grid.innerHTML = '<div class="empty-message">Пока нет материалов</div>';
-        return;
-    }
-    let html = '';
-    materials.forEach(item => {
-        html += `
-            <div class="material-card" data-id="${item.id}">
-                <div class="material-type">${escapeHtml(item.type)}</div>
-                <h3 class="material-title">${escapeHtml(item.title)}</h3>
-                <p class="material-description">${escapeHtml(item.description)}</p>
-                <a href="${escapeHtml(item.link)}" class="material-link" target="_blank">Перейти</a>
-                ${isAdmin ? `
-                    <div class="card-actions">
-                        <button class="edit-material" data-id="${item.id}">✎</button>
-                        <button class="delete-material" data-id="${item.id}">🗑</button>
-                    </div>
-                ` : ''}
-            </div>
-        `;
+    if(!materials.length) { grid.innerHTML='<div class="empty-message">Пока нет материалов</div>'; return; }
+    let html='';
+    materials.forEach(item=>{
+        html+=`<div class="material-card" data-id="${item.id}"><div class="material-type">${escapeHtml(item.type)}</div><h3 class="material-title">${escapeHtml(item.title)}</h3><p class="material-description">${escapeHtml(item.description)}</p><a href="${escapeHtml(item.link)}" class="material-link" target="_blank">Перейти</a>${isAdmin?`<div class="card-actions"><button class="edit-material" data-id="${item.id}">✎</button><button class="delete-material" data-id="${item.id}">🗑</button></div>`:''}</div>`;
     });
-    grid.innerHTML = html;
-    if (isAdmin) attachMaterialEvents();
-}
-
-function attachMaterialEvents() {
-    document.querySelectorAll('.edit-material').forEach(btn => {
-        btn.addEventListener('click', (e) => { e.stopPropagation(); editMaterial(btn.dataset.id); });
-    });
-    document.querySelectorAll('.delete-material').forEach(btn => {
-        btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMaterial(btn.dataset.id); });
-    });
-}
-
-function editMaterial(id) {
-    const material = materials.find(m => m.id === id);
-    if (!material) return;
-    document.getElementById('materialId').value = material.id;
-    document.getElementById('materialTitle').value = material.title;
-    document.getElementById('materialType').value = material.type;
-    document.getElementById('materialDesc').value = material.description;
-    document.getElementById('materialLink').value = material.link;
-    document.getElementById('materialFormTitle').textContent = 'Редактировать материал';
-    document.getElementById('materialFormContainer').style.display = 'block';
-}
-
-async function deleteMaterial(id) {
-    if (confirm('Удалить материал?')) {
-        materials = materials.filter(m => m.id !== id);
-        await saveMaterials();
-        renderMaterials();
+    grid.innerHTML=html;
+    if(isAdmin){
+        document.querySelectorAll('.edit-material').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation();editMaterial(btn.dataset.id);}));
+        document.querySelectorAll('.delete-material').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation();deleteMaterial(btn.dataset.id);}));
     }
 }
+function editMaterial(id) { const m=materials.find(m=>m.id===id); if(!m)return; document.getElementById('materialId').value=m.id; document.getElementById('materialTitle').value=m.title; document.getElementById('materialType').value=m.type; document.getElementById('materialDesc').value=m.description; document.getElementById('materialLink').value=m.link; document.getElementById('materialFormTitle').textContent='Редактировать материал'; document.getElementById('materialFormContainer').style.display='block'; }
+async function deleteMaterial(id) { if(confirm('Удалить?')){ materials=materials.filter(m=>m.id!==id); await saveMaterials(); renderMaterials(); } }
+document.getElementById('addMaterialBtn')?.addEventListener('click',()=>{ document.getElementById('materialId').value=''; document.getElementById('materialForm').reset(); document.getElementById('materialFormTitle').textContent='Новый материал'; document.getElementById('materialFormContainer').style.display='block'; });
+document.getElementById('cancelMaterial')?.addEventListener('click',()=>{ document.getElementById('materialFormContainer').style.display='none'; });
+document.getElementById('materialForm')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const id=document.getElementById('materialId').value; const title=document.getElementById('materialTitle').value.trim(); const type=document.getElementById('materialType').value; const desc=document.getElementById('materialDesc').value.trim(); const link=document.getElementById('materialLink').value.trim(); if(!title||!desc||!link)return alert('Заполните поля'); if(id){ const idx=materials.findIndex(m=>m.id===id); if(idx!==-1) materials[idx]={...materials[idx],title,type,description:desc,link}; } else { materials.push({id:Date.now().toString(),title,type,description:desc,link}); } await saveMaterials(); renderMaterials(); document.getElementById('materialFormContainer').style.display='none'; });
 
-document.getElementById('addMaterialBtn')?.addEventListener('click', () => {
-    document.getElementById('materialId').value = '';
-    document.getElementById('materialForm').reset();
-    document.getElementById('materialFormTitle').textContent = 'Новый материал';
-    document.getElementById('materialFormContainer').style.display = 'block';
-});
-document.getElementById('cancelMaterial')?.addEventListener('click', () => {
-    document.getElementById('materialFormContainer').style.display = 'none';
-});
-document.getElementById('materialForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('materialId').value;
-    const title = document.getElementById('materialTitle').value.trim();
-    const type = document.getElementById('materialType').value;
-    const desc = document.getElementById('materialDesc').value.trim();
-    const link = document.getElementById('materialLink').value.trim();
-    if (!title || !desc || !link) return alert('Заполните поля');
-    if (id) {
-        const index = materials.findIndex(m => m.id === id);
-        if (index !== -1) materials[index] = { ...materials[index], title, type, description: desc, link };
-    } else {
-        materials.push({ id: Date.now().toString(), title, type, description: desc, link });
-    }
-    await saveMaterials();
-    renderMaterials();
-    document.getElementById('materialFormContainer').style.display = 'none';
-});
-
+// Team
 function renderTeam() {
     const grid = document.getElementById('teamGrid');
-    if (!team.length) {
-        grid.innerHTML = '<div class="empty-message">Команда пока не добавлена</div>';
-        return;
-    }
-    let html = '';
-    team.forEach(member => {
-        html += `
-            <div class="team-card" data-id="${member.id}">
-                ${member.photo ? `<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name)}" class="team-photo">` : '<div class="team-photo">Нет фото</div>'}
-                <div class="team-role">${escapeHtml(member.role)}</div>
-                <h3 class="team-name">${escapeHtml(member.name)}</h3>
-                ${isAdmin ? `
-                    <div class="card-actions">
-                        <button class="edit-member" data-id="${member.id}">✎</button>
-                        <button class="delete-member" data-id="${member.id}">🗑</button>
-                    </div>
-                ` : ''}
-            </div>
-        `;
+    if(!team.length){ grid.innerHTML='<div class="empty-message">Команда пока не добавлена</div>'; return; }
+    let html='';
+    team.forEach(member=>{
+        html+=`<div class="team-card" data-id="${member.id}">${member.photo?`<img src="${escapeHtml(member.photo)}" class="team-photo">`:'<div class="team-photo">Нет фото</div>'}<div class="team-role">${escapeHtml(member.role)}</div><h3 class="team-name">${escapeHtml(member.name)}</h3>${isAdmin?`<div class="card-actions"><button class="edit-member" data-id="${member.id}">✎</button><button class="delete-member" data-id="${member.id}">🗑</button></div>`:''}</div>`;
     });
-    grid.innerHTML = html;
-
-    document.querySelectorAll('.team-card').forEach(card => {
-        const memberId = card.dataset.id;
-        card.addEventListener('click', (e) => {
-            if (!e.target.closest('.edit-member') && !e.target.closest('.delete-member')) {
-                showMemberProfile(memberId);
-            }
-        });
-    });
-    if (isAdmin) {
-        document.querySelectorAll('.edit-member').forEach(btn => {
-            btn.addEventListener('click', (e) => { e.stopPropagation(); editMember(btn.dataset.id); });
-        });
-        document.querySelectorAll('.delete-member').forEach(btn => {
-            btn.addEventListener('click', (e) => { e.stopPropagation(); deleteMember(btn.dataset.id); });
-        });
+    grid.innerHTML=html;
+    document.querySelectorAll('.team-card').forEach(card=>{ const mid=card.dataset.id; card.addEventListener('click',(e)=>{ if(!e.target.closest('.edit-member')&&!e.target.closest('.delete-member')) showMemberProfile(mid); }); });
+    if(isAdmin){
+        document.querySelectorAll('.edit-member').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); editMember(btn.dataset.id); }));
+        document.querySelectorAll('.delete-member').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); deleteMember(btn.dataset.id); }));
     }
 }
+function editMember(id) { const m=team.find(m=>m.id===id); if(!m)return; document.getElementById('memberId').value=m.id; document.getElementById('memberName').value=m.name; document.getElementById('memberRole').value=m.role; document.getElementById('memberPhoto').value=m.photo||''; document.getElementById('memberBio').value=m.bio||''; document.getElementById('memberSocial').value=m.social||''; document.getElementById('memberFormTitle').textContent='Редактировать участника'; document.getElementById('memberFormContainer').style.display='block'; const fileInput=document.getElementById('memberPhotoFile'); if(fileInput){ fileInput.value=''; fileInput.onchange=async(e)=>{ const file=e.target.files[0]; if(file && window.auth.currentUser){ const newUrl=await uploadMemberPhoto(file,m.id,m.photo); if(newUrl) document.getElementById('memberPhoto').value=newUrl; }else if(file) alert('Войдите как администратор'); }; } }
+async function deleteMember(id) { if(confirm('Удалить участника?')){ const member=team.find(m=>m.id===id); if(member?.photo?.includes('firebasestorage.googleapis.com')) await deleteMemberPhoto(member.photo); team=team.filter(m=>m.id!==id); await saveTeam(); if(currentPage==='member-profile'&&currentProfileId===id) switchPage('team'); else renderTeam(); } }
+document.getElementById('addMemberBtn')?.addEventListener('click',()=>{ document.getElementById('memberId').value=''; document.getElementById('memberForm').reset(); document.getElementById('memberFormTitle').textContent='Новый участник'; document.getElementById('memberFormContainer').style.display='block'; const fileInput=document.getElementById('memberPhotoFile'); if(fileInput){ fileInput.value=''; fileInput.onchange=async(e)=>{ const file=e.target.files[0]; if(file && window.auth.currentUser){ const tempId='temp_'+Date.now(); const url=await uploadMemberPhoto(file,tempId,null); if(url) document.getElementById('memberPhoto').value=url; }else if(file) alert('Войдите как администратор'); }; } });
+document.getElementById('cancelMember')?.addEventListener('click',()=>{ document.getElementById('memberFormContainer').style.display='none'; const prog=document.getElementById('uploadProgress'); if(prog) prog.textContent=''; });
+document.getElementById('memberForm')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const id=document.getElementById('memberId').value; const name=document.getElementById('memberName').value.trim(); const role=document.getElementById('memberRole').value.trim(); const photo=document.getElementById('memberPhoto').value.trim(); const bio=document.getElementById('memberBio').value.trim(); const social=document.getElementById('memberSocial').value.trim(); if(!name||!role)return alert('Заполните имя и роль'); if(id){ const idx=team.findIndex(m=>m.id===id); if(idx!==-1) team[idx]={...team[idx],name,role,photo,bio,social}; } else { team.push({id:Date.now().toString(),name,role,photo,bio,social}); } await saveTeam(); if(currentPage==='member-profile'&&currentProfileId===id) renderMemberProfile(id); else renderTeam(); document.getElementById('memberFormContainer').style.display='none'; const prog=document.getElementById('uploadProgress'); if(prog) prog.textContent=''; });
 
-function editMember(id) {
-    const member = team.find(m => m.id === id);
-    if (!member) return;
-    document.getElementById('memberId').value = member.id;
-    document.getElementById('memberName').value = member.name;
-    document.getElementById('memberRole').value = member.role;
-    document.getElementById('memberPhoto').value = member.photo || '';
-    document.getElementById('memberBio').value = member.bio || '';
-    document.getElementById('memberSocial').value = member.social || '';
-    document.getElementById('memberFormTitle').textContent = 'Редактировать участника';
-    document.getElementById('memberFormContainer').style.display = 'block';
-}
+// Profile
+function showMemberProfile(mid){ currentProfileId=mid; renderMemberProfile(mid); switchPage('member-profile'); }
+function renderMemberProfile(mid){ const member=team.find(m=>m.id===mid); if(!member)return; const container=document.getElementById('memberProfileContent'); container.innerHTML=`<div class="profile-container">${member.photo?`<img src="${escapeHtml(member.photo)}" class="profile-photo">`:'<div class="profile-photo">Нет фото</div>'}<h2 class="profile-name">${escapeHtml(member.name)}</h2><div class="profile-role">${escapeHtml(member.role)}</div><div class="profile-bio"><strong>Биография:</strong><br>${escapeHtml(member.bio||'Не указана')}</div><div class="profile-social"><strong>Соцсети:</strong><br>${formatSocialLinks(member.social)}</div></div>`; }
+function formatSocialLinks(s){ if(!s)return '—'; return s.split('\n').filter(l=>l.trim()).map(l=>`<a href="${escapeHtml(l.trim())}" target="_blank">${escapeHtml(l.trim())}</a>`).join('<br>'); }
+document.getElementById('backToTeamBtn').addEventListener('click',()=>switchPage('team'));
 
-async function deleteMember(id) {
-    if (confirm('Удалить участника?')) {
-        team = team.filter(m => m.id !== id);
-        await saveTeam();
-        if (currentPage === 'member-profile' && currentProfileId === id) {
-            switchPage('team');
-        } else {
-            renderTeam();
-        }
-    }
-}
-
-document.getElementById('addMemberBtn')?.addEventListener('click', () => {
-    document.getElementById('memberId').value = '';
-    document.getElementById('memberForm').reset();
-    document.getElementById('memberFormTitle').textContent = 'Новый участник';
-    document.getElementById('memberFormContainer').style.display = 'block';
-});
-document.getElementById('cancelMember')?.addEventListener('click', () => {
-    document.getElementById('memberFormContainer').style.display = 'none';
-});
-document.getElementById('memberForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('memberId').value;
-    const name = document.getElementById('memberName').value.trim();
-    const role = document.getElementById('memberRole').value.trim();
-    const photo = document.getElementById('memberPhoto').value.trim();
-    const bio = document.getElementById('memberBio').value.trim();
-    const social = document.getElementById('memberSocial').value.trim();
-    if (!name || !role) return alert('Заполните имя и роль');
-    if (id) {
-        const index = team.findIndex(m => m.id === id);
-        if (index !== -1) team[index] = { ...team[index], name, role, photo, bio, social };
-    } else {
-        team.push({ id: Date.now().toString(), name, role, photo, bio, social });
-    }
-    await saveTeam();
-    if (currentPage === 'member-profile' && currentProfileId === id) {
-        renderMemberProfile(id);
-    } else {
-        renderTeam();
-    }
-    document.getElementById('memberFormContainer').style.display = 'none';
-});
-
-function showMemberProfile(memberId) {
-    currentProfileId = memberId;
-    renderMemberProfile(memberId);
-    switchPage('member-profile');
-}
-
-function renderMemberProfile(memberId) {
-    const member = team.find(m => m.id === memberId);
-    if (!member) return;
-    const container = document.getElementById('memberProfileContent');
-    const html = `
-        <div class="profile-container">
-            ${member.photo ? `<img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name)}" class="profile-photo">` : '<div class="profile-photo" style="background:#333; display:flex; align-items:center; justify-content:center;">Нет фото</div>'}
-            <h2 class="profile-name">${escapeHtml(member.name)}</h2>
-            <div class="profile-role">${escapeHtml(member.role)}</div>
-            <div class="profile-bio"><strong>Биография:</strong><br>${escapeHtml(member.bio || 'Не указана')}</div>
-            <div class="profile-social"><strong>Социальные сети:</strong><br>${formatSocialLinks(member.social)}</div>
-        </div>
-    `;
-    container.innerHTML = html;
-}
-
-function formatSocialLinks(socialStr) {
-    if (!socialStr) return '—';
-    const links = socialStr.split('\n').filter(l => l.trim());
-    if (!links.length) return '—';
-    return links.map(link => `<a href="${link.trim()}" target="_blank">${link.trim()}</a>`).join('<br>');
-}
-
-document.getElementById('backToTeamBtn').addEventListener('click', () => {
-    switchPage('team');
-});
-
+// Projects
 function renderProjects() {
-    const grid = document.getElementById('projectsGrid');
-    if (!projects.length) {
-        grid.innerHTML = '<div class="empty-message">Проектов пока нет</div>';
-        return;
-    }
-    let html = '';
-    projects.forEach(proj => {
-        html += `
-            <div class="project-card" data-id="${proj.id}">
-                <h3 class="project-title">${escapeHtml(proj.title)}</h3>
-                <p class="project-description">${escapeHtml(proj.description)}</p>
-                <div class="project-date" style="color:#2ecc71;">${escapeHtml(proj.date)}</div>
-                ${isAdmin ? `
-                    <div class="card-actions">
-                        <button class="edit-project" data-id="${proj.id}">✎</button>
-                        <button class="delete-project" data-id="${proj.id}">🗑</button>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    });
-    grid.innerHTML = html;
-    if (isAdmin) {
-        document.querySelectorAll('.edit-project').forEach(btn => {
-            btn.addEventListener('click', () => editProject(btn.dataset.id));
-        });
-        document.querySelectorAll('.delete-project').forEach(btn => {
-            btn.addEventListener('click', () => deleteProject(btn.dataset.id));
-        });
+    const grid=document.getElementById('projectsGrid');
+    if(!projects.length){ grid.innerHTML='<div class="empty-message">Проектов пока нет</div>'; return; }
+    let html='';
+    projects.forEach(p=>{ html+=`<div class="project-card" data-id="${p.id}"><h3 class="project-title">${escapeHtml(p.title)}</h3><p class="project-description">${escapeHtml(p.description)}</p><div style="color:#2ecc71;">${escapeHtml(p.date)}</div>${isAdmin?`<div class="card-actions"><button class="edit-project" data-id="${p.id}">✎</button><button class="delete-project" data-id="${p.id}">🗑</button></div>`:''}</div>`; });
+    grid.innerHTML=html;
+    if(isAdmin){
+        document.querySelectorAll('.edit-project').forEach(btn=>btn.addEventListener('click',()=>editProject(btn.dataset.id)));
+        document.querySelectorAll('.delete-project').forEach(btn=>btn.addEventListener('click',()=>deleteProject(btn.dataset.id)));
     }
 }
+function editProject(id){ const p=projects.find(p=>p.id===id); if(!p)return; document.getElementById('projectId').value=p.id; document.getElementById('projectTitle').value=p.title; document.getElementById('projectDesc').value=p.description; document.getElementById('projectDate').value=p.date; document.getElementById('projectFormTitle').textContent='Редактировать проект'; document.getElementById('projectFormContainer').style.display='block'; }
+async function deleteProject(id){ if(confirm('Удалить проект?')){ projects=projects.filter(p=>p.id!==id); await saveProjects(); renderProjects(); } }
+document.getElementById('addProjectBtn')?.addEventListener('click',()=>{ document.getElementById('projectId').value=''; document.getElementById('projectForm').reset(); document.getElementById('projectFormTitle').textContent='Новый проект'; document.getElementById('projectFormContainer').style.display='block'; });
+document.getElementById('cancelProject')?.addEventListener('click',()=>{ document.getElementById('projectFormContainer').style.display='none'; });
+document.getElementById('projectForm')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const id=document.getElementById('projectId').value; const title=document.getElementById('projectTitle').value.trim(); const desc=document.getElementById('projectDesc').value.trim(); const date=document.getElementById('projectDate').value.trim(); if(!title||!desc||!date)return alert('Заполните поля'); if(id){ const idx=projects.findIndex(p=>p.id===id); if(idx!==-1) projects[idx]={...projects[idx],title,description:desc,date}; } else { projects.push({id:Date.now().toString(),title,description:desc,date}); } await saveProjects(); renderProjects(); document.getElementById('projectFormContainer').style.display='none'; });
 
-function editProject(id) {
-    const proj = projects.find(p => p.id === id);
-    if (!proj) return;
-    document.getElementById('projectId').value = proj.id;
-    document.getElementById('projectTitle').value = proj.title;
-    document.getElementById('projectDesc').value = proj.description;
-    document.getElementById('projectDate').value = proj.date;
-    document.getElementById('projectFormTitle').textContent = 'Редактировать проект';
-    document.getElementById('projectFormContainer').style.display = 'block';
-}
+// Contacts
+function renderContacts(){ const c=document.getElementById('contactsContent'); c.innerHTML=`<p><strong>Email:</strong> <a href="mailto:${escapeHtml(contacts.email)}">${escapeHtml(contacts.email)}</a></p><p><strong>Соцсети:</strong> ${contacts.social?contacts.social.split(',').map(l=>`<a href="${escapeHtml(l.trim())}" target="_blank">${escapeHtml(l.trim())}</a>`).join(', '):'—'}</p><p><strong>Дополнительно:</strong> ${escapeHtml(contacts.other)}</p>`; }
+document.getElementById('editContactsBtn')?.addEventListener('click',()=>{ document.getElementById('contactEmail').value=contacts.email; document.getElementById('contactSocial').value=contacts.social; document.getElementById('contactOther').value=contacts.other; document.getElementById('contactsFormContainer').style.display='block'; });
+document.getElementById('cancelContacts')?.addEventListener('click',()=>{ document.getElementById('contactsFormContainer').style.display='none'; });
+document.getElementById('contactsForm')?.addEventListener('submit',async(e)=>{ e.preventDefault(); contacts.email=document.getElementById('contactEmail').value.trim(); contacts.social=document.getElementById('contactSocial').value.trim(); contacts.other=document.getElementById('contactOther').value.trim(); await saveContacts(); renderContacts(); document.getElementById('contactsFormContainer').style.display='none'; });
 
-async function deleteProject(id) {
-    if (confirm('Удалить проект?')) {
-        projects = projects.filter(p => p.id !== id);
-        await saveProjects();
-        renderProjects();
-    }
-}
+// Helpers
+function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"]/g,function(m){ if(m==='&')return '&amp;'; if(m==='<')return '&lt;'; if(m==='>')return '&gt;'; if(m==='"')return '&quot;'; return m;}); }
 
-document.getElementById('addProjectBtn')?.addEventListener('click', () => {
-    document.getElementById('projectId').value = '';
-    document.getElementById('projectForm').reset();
-    document.getElementById('projectFormTitle').textContent = 'Новый проект';
-    document.getElementById('projectFormContainer').style.display = 'block';
-});
-document.getElementById('cancelProject')?.addEventListener('click', () => {
-    document.getElementById('projectFormContainer').style.display = 'none';
-});
-document.getElementById('projectForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('projectId').value;
-    const title = document.getElementById('projectTitle').value.trim();
-    const desc = document.getElementById('projectDesc').value.trim();
-    const date = document.getElementById('projectDate').value.trim();
-    if (!title || !desc || !date) return alert('Заполните поля');
-    if (id) {
-        const index = projects.findIndex(p => p.id === id);
-        if (index !== -1) projects[index] = { ...projects[index], title, description: desc, date };
-    } else {
-        projects.push({ id: Date.now().toString(), title, description: desc, date });
-    }
-    await saveProjects();
-    renderProjects();
-    document.getElementById('projectFormContainer').style.display = 'none';
-});
-function renderContacts() {
-    const content = document.getElementById('contactsContent');
-    let html = `
-        <p><strong>Email:</strong> <a href="mailto:${escapeHtml(contacts.email)}">${escapeHtml(contacts.email)}</a></p>
-        <p><strong>Соцсети:</strong> ${formatContactsSocial(contacts.social)}</p>
-        <p><strong>Дополнительно:</strong> ${escapeHtml(contacts.other)}</p>
-    `;
-    content.innerHTML = html;
-}
-
-function formatContactsSocial(str) {
-    if (!str) return '—';
-    return str.split(',').map(link => `<a href="${link.trim()}" target="_blank">${link.trim()}</a>`).join(', ');
-}
-
-document.getElementById('editContactsBtn')?.addEventListener('click', () => {
-    document.getElementById('contactEmail').value = contacts.email;
-    document.getElementById('contactSocial').value = contacts.social;
-    document.getElementById('contactOther').value = contacts.other;
-    document.getElementById('contactsFormContainer').style.display = 'block';
-});
-document.getElementById('cancelContacts')?.addEventListener('click', () => {
-    document.getElementById('contactsFormContainer').style.display = 'none';
-});
-document.getElementById('contactsForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    contacts.email = document.getElementById('contactEmail').value.trim();
-    contacts.social = document.getElementById('contactSocial').value.trim();
-    contacts.other = document.getElementById('contactOther').value.trim();
-    await saveContacts();
-    renderContacts();
-    document.getElementById('contactsFormContainer').style.display = 'none';
-});
-
-function escapeHtml(unsafe) {
-    if (!unsafe) return '';
-    return unsafe.replace(/[&<>"]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        if (m === '"') return '&quot;';
-        return m;
-    });
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
+// Init
+document.addEventListener('DOMContentLoaded', async ()=>{
     await loadAllData();
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchPage(link.dataset.page);
-        });
-    });
-
-    loginBtn.addEventListener('click', showModal);
-    logoutBtn.addEventListener('click', logout);
-    closeModal.addEventListener('click', hideModal);
-    window.addEventListener('click', (e) => { if (e.target === loginModal) hideModal(); });
-
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        login(email, password);
-        hideModal();
-    });
-
+    navLinks.forEach(link=>link.addEventListener('click',(e)=>{ e.preventDefault(); switchPage(link.dataset.page); }));
+    loginBtn.addEventListener('click',showModal); logoutBtn.addEventListener('click',logout); closeModal.addEventListener('click',hideModal); window.addEventListener('click',(e)=>{ if(e.target===loginModal) hideModal(); });
+    loginForm.addEventListener('submit',(e)=>{ e.preventDefault(); login(document.getElementById('username').value, document.getElementById('password').value); hideModal(); });
     switchPage('materials');
 });
