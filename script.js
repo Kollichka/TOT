@@ -5,6 +5,7 @@ let projects = [];
 let contacts = { email: "", social: "", other: "" };
 let isAdmin = false;
 let currentProfileId = null;
+let isUploading = false; // флаг для предотвращения повторной отправки
 
 const navLinks = document.querySelectorAll("[data-page]");
 const pages = {
@@ -108,8 +109,10 @@ async function uploadMemberPhoto(file, memberId, oldPhotoUrl) {
         }
         return url;
     } catch (e) {
-        alert("Ошибка загрузки: " + e.message);
-        if (progressSpan) progressSpan.textContent = "";
+        console.error("Ошибка загрузки:", e);
+        if (progressSpan) progressSpan.textContent = "Ошибка!";
+        alert("Ошибка загрузки фото: " + e.message);
+        setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 3000);
         return null;
     }
 }
@@ -272,6 +275,10 @@ function renderTeam() {
         document.querySelectorAll(".delete-member").forEach(btn => btn.addEventListener("click", (e) => { e.stopPropagation(); deleteMember(btn.dataset.id); }));
     }
 }
+
+// Храним временный файл до сохранения формы
+let pendingPhotoFile = null;
+
 function editMember(id) {
     const member = team.find(m => m.id === id);
     if (!member) return;
@@ -283,18 +290,22 @@ function editMember(id) {
     document.getElementById("memberSocial").value = member.social || "";
     document.getElementById("memberFormTitle").textContent = "Редактировать участника";
     document.getElementById("memberFormContainer").style.display = "block";
+    pendingPhotoFile = null; // сбрасываем
     const fileInput = document.getElementById("memberPhotoFile");
     if (fileInput) {
         fileInput.value = "";
-        fileInput.onchange = async (e) => {
+        fileInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file && window.auth.currentUser) {
-                const newUrl = await uploadMemberPhoto(file, member.id, member.photo);
-                if (newUrl) document.getElementById("memberPhoto").value = newUrl;
+                // Предварительно показываем имя файла, но не загружаем
+                pendingPhotoFile = file;
+                document.getElementById("uploadProgress").textContent = "Файл выбран";
+                setTimeout(() => document.getElementById("uploadProgress").textContent = "", 2000);
             } else if (file) alert("Войдите как администратор");
         };
     }
 }
+
 async function deleteMember(id) {
     if (confirm("Удалить участника?")) {
         const member = team.find(m => m.id === id);
@@ -305,50 +316,106 @@ async function deleteMember(id) {
         else renderTeam();
     }
 }
+
 document.getElementById("addMemberBtn")?.addEventListener("click", () => {
     document.getElementById("memberId").value = "";
     document.getElementById("memberForm").reset();
     document.getElementById("memberFormTitle").textContent = "Новый участник";
     document.getElementById("memberFormContainer").style.display = "block";
+    pendingPhotoFile = null;
     const fileInput = document.getElementById("memberPhotoFile");
     if (fileInput) {
         fileInput.value = "";
-        fileInput.onchange = async (e) => {
+        fileInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file && window.auth.currentUser) {
-                const tempId = "temp_" + Date.now();
-                const url = await uploadMemberPhoto(file, tempId, null);
-                if (url) document.getElementById("memberPhoto").value = url;
+                pendingPhotoFile = file;
+                document.getElementById("uploadProgress").textContent = "Файл выбран";
+                setTimeout(() => document.getElementById("uploadProgress").textContent = "", 2000);
             } else if (file) alert("Войдите как администратор");
         };
     }
 });
+
 document.getElementById("cancelMember")?.addEventListener("click", () => {
     document.getElementById("memberFormContainer").style.display = "none";
+    pendingPhotoFile = null;
     const prog = document.getElementById("uploadProgress");
     if (prog) prog.textContent = "";
 });
+
 document.getElementById("memberForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (isUploading) return; // защита от двойной отправки
     const id = document.getElementById("memberId").value;
     const name = document.getElementById("memberName").value.trim();
     const role = document.getElementById("memberRole").value.trim();
-    const photo = document.getElementById("memberPhoto").value.trim();
+    let photo = document.getElementById("memberPhoto").value.trim();
     const bio = document.getElementById("memberBio").value.trim();
     const social = document.getElementById("memberSocial").value.trim();
     if (!name || !role) return alert("Заполните имя и роль");
-    if (id) {
-        const idx = team.findIndex(m => m.id === id);
-        if (idx !== -1) team[idx] = { ...team[idx], name, role, photo, bio, social };
-    } else {
-        team.push({ id: Date.now().toString(), name, role, photo, bio, social });
+
+    isUploading = true;
+    const submitBtn = document.querySelector("#memberForm .submit-btn");
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = "Сохранение...";
+    submitBtn.disabled = true;
+
+    try {
+        // Если есть выбранный файл, загружаем его ПОСЛЕ получения ID
+        if (pendingPhotoFile) {
+            if (id) {
+                // редактирование: ID уже есть
+                const newUrl = await uploadMemberPhoto(pendingPhotoFile, id, photo);
+                if (newUrl) photo = newUrl;
+            } else {
+                // создание нового: сначала создаём запись с пустым фото, получаем ID
+                const newId = Date.now().toString();
+                const newMember = { id: newId, name, role, photo: "", bio, social };
+                team.push(newMember);
+                await saveTeam();
+                // теперь загружаем фото с реальным ID
+                const newUrl = await uploadMemberPhoto(pendingPhotoFile, newId, null);
+                if (newUrl) {
+                    const idx = team.findIndex(m => m.id === newId);
+                    if (idx !== -1) team[idx].photo = newUrl;
+                    await saveTeam();
+                }
+                // обновляем отображение
+                if (currentPage === "member-profile" && currentProfileId === newId) renderMemberProfile(newId);
+                else renderTeam();
+                document.getElementById("memberFormContainer").style.display = "none";
+                isUploading = false;
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+                pendingPhotoFile = null;
+                return;
+            }
+        }
+        // Если нет файла, просто обновляем данные
+        if (id) {
+            const idx = team.findIndex(m => m.id === id);
+            if (idx !== -1) team[idx] = { ...team[idx], name, role, photo, bio, social };
+            await saveTeam();
+        } else if (!pendingPhotoFile) {
+            // Новый участник без фото
+            team.push({ id: Date.now().toString(), name, role, photo, bio, social });
+            await saveTeam();
+        }
+        if (currentPage === "member-profile" && currentProfileId === id) renderMemberProfile(id);
+        else renderTeam();
+        document.getElementById("memberFormContainer").style.display = "none";
+        pendingPhotoFile = null;
+    } catch (err) {
+        console.error(err);
+        alert("Ошибка сохранения: " + err.message);
+    } finally {
+        isUploading = false;
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        const prog = document.getElementById("uploadProgress");
+        if (prog) prog.textContent = "";
     }
-    await saveTeam();
-    if (currentPage === "member-profile" && currentProfileId === id) renderMemberProfile(id);
-    else renderTeam();
-    document.getElementById("memberFormContainer").style.display = "none";
-    const prog = document.getElementById("uploadProgress");
-    if (prog) prog.textContent = "";
 });
 
 function showMemberProfile(mid) {
