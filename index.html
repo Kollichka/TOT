@@ -5,26 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TOT | Команда дубляжа</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Firebase SDK (модульная версия 9+) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
-  apiKey: "AIzaSyBOtk6M4eH0ZgTsJ8sC-QHNVgRqqGU5Lak",
-  authDomain: "tot-dub.firebaseapp.com",
-  databaseURL: "https://tot-dub-default-rtdb.firebaseio.com",
-  projectId: "tot-dub",
-  storageBucket: "tot-dub.firebasestorage.app",
-  messagingSenderId: "368239154357",
-  appId: "1:368239154357:web:c7db40fe79b60392d21afc",
-  measurementId: "G-5JX2KKJ3TY"
-};
+              apiKey: "AIzaSyBOtk6M4eH0ZgTsJ8sC-QHNVgRqqGU5Lak",
+              authDomain: "tot-dub.firebaseapp.com",
+              databaseURL: "https://tot-dub-default-rtdb.firebaseio.com",
+              projectId: "tot-dub",
+              storageBucket: "tot-dub.firebasestorage.app",
+              messagingSenderId: "368239154357",
+              appId: "1:368239154357:web:c7db40fe79b60392d21afc",
+              measurementId: "G-5JX2KKJ3TY"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
+        const storage = getStorage(app);
 
         window.db = db;
         window.ref = ref;
@@ -34,6 +35,11 @@
         window.update = update;
         window.remove = remove;
         window.auth = auth;
+        window.storage = storage;
+        window.storageRef = storageRef;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
+        window.deleteObject = deleteObject;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signOut = signOut;
         window.onAuthStateChanged = onAuthStateChanged;
@@ -43,9 +49,7 @@
 <body>
     <header>
         <div class="container header-content">
-            <div class="logo">
-                <h1>TOT<span> DUB</span></h1>
-            </div>
+            <div class="logo"><h1>TOT<span> DUB</span></h1></div>
             <nav>
                 <ul id="nav-menu">
                     <li><a href="#materials" class="active" data-page="materials">Материалы</a></li>
@@ -62,7 +66,6 @@
     </header>
 
     <main class="container">
-        <!-- Страница МАТЕРИАЛЫ -->
         <section id="materials-page" class="page active-page">
             <h2 class="section-title">Библиотека материалов</h2>
             <div class="materials-grid" id="materialsGrid"></div>
@@ -73,36 +76,15 @@
                 <h3 id="materialFormTitle">Новый материал</h3>
                 <form id="materialForm">
                     <input type="hidden" id="materialId">
-                    <div class="form-group">
-                        <label for="materialTitle">Название</label>
-                        <input type="text" id="materialTitle" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="materialType">Тип</label>
-                        <select id="materialType" required>
-                            <option value="Видео">Видео</option>
-                            <option value="Аудио">Аудио</option>
-                            <option value="Текст">Текст</option>
-                            <option value="Другое">Другое</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="materialDesc">Описание</label>
-                        <textarea id="materialDesc" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="materialLink">Ссылка</label>
-                        <input type="url" id="materialLink" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelMaterial">Отмена</button>
-                    </div>
+                    <div class="form-group"><label for="materialTitle">Название</label><input type="text" id="materialTitle" required></div>
+                    <div class="form-group"><label for="materialType">Тип</label><select id="materialType" required><option>Видео</option><option>Аудио</option><option>Текст</option><option>Другое</option></select></div>
+                    <div class="form-group"><label for="materialDesc">Описание</label><textarea id="materialDesc" required></textarea></div>
+                    <div class="form-group"><label for="materialLink">Ссылка</label><input type="url" id="materialLink" required></div>
+                    <div class="form-actions"><button type="submit" class="submit-btn">Сохранить</button><button type="button" class="cancel-btn" id="cancelMaterial">Отмена</button></div>
                 </form>
             </div>
         </section>
 
-        <!-- Страница КОМАНДА -->
         <section id="team-page" class="page">
             <h2 class="section-title">Наша команда</h2>
             <div class="team-grid" id="teamGrid"></div>
@@ -113,96 +95,52 @@
                 <h3 id="memberFormTitle">Новый участник</h3>
                 <form id="memberForm">
                     <input type="hidden" id="memberId">
+                    <div class="form-group"><label for="memberName">Имя</label><input type="text" id="memberName" required></div>
+                    <div class="form-group"><label for="memberRole">Роль</label><input type="text" id="memberRole" required></div>
                     <div class="form-group">
-                        <label for="memberName">Имя</label>
-                        <input type="text" id="memberName" required>
+                        <label for="memberPhoto">Фото (URL или загрузите)</label>
+                        <input type="text" id="memberPhoto" placeholder="https://...">
+                        <div style="margin-top:8px;"><label for="memberPhotoFile" style="background:#2ecc71;color:#000;padding:5px 10px;border-radius:3px;cursor:pointer;">Выбрать файл</label>
+                        <input type="file" id="memberPhotoFile" accept="image/*" style="display:none;"><span id="uploadProgress" style="margin-left:10px;font-size:0.85rem;color:#2ecc71;"></span></div>
                     </div>
-                    <div class="form-group">
-                        <label for="memberRole">Роль</label>
-                        <input type="text" id="memberRole" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="memberPhoto">Ссылка на фото (опционально)</label>
-                        <input type="url" id="memberPhoto" placeholder="https://...">
-                    </div>
-                    <div class="form-group">
-                        <label for="memberBio">Биография</label>
-                        <textarea id="memberBio" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="memberSocial">Социальные сети (по одной на строку)</label>
-                        <textarea id="memberSocial" rows="2" placeholder="https://vk.com/...&#10;https://t.me/..."></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelMember">Отмена</button>
-                    </div>
+                    <div class="form-group"><label for="memberBio">Биография</label><textarea id="memberBio" rows="3"></textarea></div>
+                    <div class="form-group"><label for="memberSocial">Соцсети (по одной на строку)</label><textarea id="memberSocial" rows="2"></textarea></div>
+                    <div class="form-actions"><button type="submit" class="submit-btn">Сохранить</button><button type="button" class="cancel-btn" id="cancelMember">Отмена</button></div>
                 </form>
             </div>
         </section>
 
-        <!-- Страница ПРОЕКТЫ -->
         <section id="projects-page" class="page">
             <h2 class="section-title">Наши проекты</h2>
             <div class="projects-grid" id="projectsGrid"></div>
-            <div class="admin-controls" id="projectsAdmin" style="display: none;">
-                <button class="add-button" id="addProjectBtn">+ Добавить проект</button>
-            </div>
+            <div class="admin-controls" id="projectsAdmin" style="display: none;"><button class="add-button" id="addProjectBtn">+ Добавить проект</button></div>
             <div class="add-form" id="projectFormContainer" style="display: none;">
                 <h3 id="projectFormTitle">Новый проект</h3>
                 <form id="projectForm">
                     <input type="hidden" id="projectId">
-                    <div class="form-group">
-                        <label for="projectTitle">Название</label>
-                        <input type="text" id="projectTitle" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="projectDesc">Описание</label>
-                        <textarea id="projectDesc" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="projectDate">Дата</label>
-                        <input type="text" id="projectDate" placeholder="2025" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelProject">Отмена</button>
-                    </div>
+                    <div class="form-group"><label for="projectTitle">Название</label><input type="text" id="projectTitle" required></div>
+                    <div class="form-group"><label for="projectDesc">Описание</label><textarea id="projectDesc" required></textarea></div>
+                    <div class="form-group"><label for="projectDate">Дата</label><input type="text" id="projectDate" placeholder="2025" required></div>
+                    <div class="form-actions"><button type="submit" class="submit-btn">Сохранить</button><button type="button" class="cancel-btn" id="cancelProject">Отмена</button></div>
                 </form>
             </div>
         </section>
 
-        <!-- Страница КОНТАКТЫ -->
         <section id="contacts-page" class="page">
             <h2 class="section-title">Контакты</h2>
             <div class="contacts-content" id="contactsContent"></div>
-            <div class="admin-controls" id="contactsAdmin" style="display: none;">
-                <button class="add-button" id="editContactsBtn">Редактировать контакты</button>
-            </div>
+            <div class="admin-controls" id="contactsAdmin" style="display: none;"><button class="add-button" id="editContactsBtn">Редактировать контакты</button></div>
             <div class="add-form" id="contactsFormContainer" style="display: none;">
                 <h3>Редактировать контакты</h3>
                 <form id="contactsForm">
-                    <div class="form-group">
-                        <label for="contactEmail">Email</label>
-                        <input type="email" id="contactEmail" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="contactSocial">Социальные сети (через запятую)</label>
-                        <input type="text" id="contactSocial" placeholder="https://vk.com/..., https://t.me/...">
-                    </div>
-                    <div class="form-group">
-                        <label for="contactOther">Дополнительно</label>
-                        <textarea id="contactOther" placeholder="Другая информация"></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="submit-btn">Сохранить</button>
-                        <button type="button" class="cancel-btn" id="cancelContacts">Отмена</button>
-                    </div>
+                    <div class="form-group"><label for="contactEmail">Email</label><input type="email" id="contactEmail" required></div>
+                    <div class="form-group"><label for="contactSocial">Соцсети (через запятую)</label><input type="text" id="contactSocial"></div>
+                    <div class="form-group"><label for="contactOther">Дополнительно</label><textarea id="contactOther"></textarea></div>
+                    <div class="form-actions"><button type="submit" class="submit-btn">Сохранить</button><button type="button" class="cancel-btn" id="cancelContacts">Отмена</button></div>
                 </form>
             </div>
         </section>
 
-        <!-- Страница ПРОФИЛЬ УЧАСТНИКА -->
         <section id="member-profile-page" class="page">
             <button class="back-button" id="backToTeamBtn">← Назад к команде</button>
             <div id="memberProfileContent"></div>
@@ -213,24 +151,13 @@
                 <span class="close">&times;</span>
                 <h2>Вход для администратора</h2>
                 <form id="loginForm">
-                    <div class="form-group">
-                        <label for="username">Email</label>
-                        <input type="email" id="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Пароль</label>
-                        <input type="password" id="password" required>
-                    </div>
+                    <div class="form-group"><label for="username">Email</label><input type="email" id="username" required></div>
+                    <div class="form-group"><label for="password">Пароль</label><input type="password" id="password" required></div>
                     <button type="submit" class="submit-btn">Войти</button>
                 </form>
             </div>
         </div>
     </main>
-
-    <footer>
-        <div class="container">
-            <p>© 2025 TOT — команда дубляжа. Все права защищены.</p>
-        </div>
-    </footer>
+    <footer><div class="container"><p>© 2025 TOT — команда дубляжа. Все права защищены.</p></div></footer>
 </body>
 </html>
