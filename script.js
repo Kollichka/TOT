@@ -1,4 +1,3 @@
-// ==================== Глобальные переменные ====================
 let currentPage = 'materials';
 let materials = [];
 let team = [];
@@ -7,7 +6,6 @@ let contacts = { email: '', social: '', other: '' };
 let isAdmin = false;
 let currentProfileId = null;
 
-// DOM элементы
 const navLinks = document.querySelectorAll('[data-page]');
 const pages = {
     materials: document.getElementById('materials-page'),
@@ -29,14 +27,12 @@ const loginModal = document.getElementById('loginModal');
 const closeModal = document.querySelector('.close');
 const loginForm = document.getElementById('loginForm');
 
-// ==================== Работа с Firebase ====================
 async function loadAllData() {
     try {
         const db = window.db;
         const ref = window.ref;
         const get = window.get;
 
-        // Загружаем материалы
         const materialsSnap = await get(ref(db, 'materials'));
         if (materialsSnap.exists()) {
             materials = materialsSnap.val();
@@ -50,7 +46,6 @@ async function loadAllData() {
             await window.set(ref(db, 'materials'), materials);
         }
 
-        // Загружаем команду
         const teamSnap = await get(ref(db, 'team'));
         if (teamSnap.exists()) {
             team = teamSnap.val();
@@ -63,7 +58,6 @@ async function loadAllData() {
             await window.set(ref(db, 'team'), team);
         }
 
-        // Загружаем проекты
         const projectsSnap = await get(ref(db, 'projects'));
         if (projectsSnap.exists()) {
             projects = projectsSnap.val();
@@ -76,7 +70,6 @@ async function loadAllData() {
             await window.set(ref(db, 'projects'), projects);
         }
 
-        // Загружаем контакты
         const contactsSnap = await get(ref(db, 'contacts'));
         if (contactsSnap.exists()) {
             contacts = contactsSnap.val();
@@ -107,7 +100,6 @@ async function saveContacts() {
     await window.set(window.ref(window.db, 'contacts'), contacts);
 }
 
-// ==================== Авторизация через Firebase Auth ====================
 function updateAuthUI() {
     if (isAdmin) {
         loginBtn.style.display = 'none';
@@ -123,7 +115,6 @@ function updateAuthUI() {
 async function login(email, password) {
     try {
         await window.signInWithEmailAndPassword(window.auth, email, password);
-        // isAdmin обновится через onAuthStateChanged
     } catch (error) {
         alert('Ошибка входа: ' + error.message);
     }
@@ -133,13 +124,10 @@ async function logout() {
     await window.signOut(window.auth);
 }
 
-// Следим за состоянием аутентификации
 window.onAuthStateChanged(window.auth, (user) => {
     if (user) {
-        // Пользователь вошёл
         isAdmin = true;
     } else {
-        // Пользователь вышел
         isAdmin = false;
     }
     updateAuthUI();
@@ -156,7 +144,6 @@ function hideAllForms() {
     document.getElementById('contactsFormContainer').style.display = 'none';
 }
 
-// ==================== Навигация ====================
 function switchPage(pageId) {
     Object.values(pages).forEach(p => p.classList.remove('active-page'));
     if (pages[pageId]) pages[pageId].classList.add('active-page');
@@ -185,7 +172,6 @@ function renderCurrentPage() {
     }
 }
 
-// ==================== Материалы ====================
 function renderMaterials() {
     const grid = document.getElementById('materialsGrid');
     if (!materials.length) {
@@ -270,7 +256,6 @@ document.getElementById('materialForm')?.addEventListener('submit', async (e) =>
     document.getElementById('materialFormContainer').style.display = 'none';
 });
 
-// ==================== Команда ====================
 function renderTeam() {
     const grid = document.getElementById('teamGrid');
     if (!team.length) {
@@ -371,7 +356,6 @@ document.getElementById('memberForm')?.addEventListener('submit', async (e) => {
     document.getElementById('memberFormContainer').style.display = 'none';
 });
 
-// ==================== Профиль участника ====================
 function showMemberProfile(memberId) {
     currentProfileId = memberId;
     renderMemberProfile(memberId);
@@ -405,7 +389,6 @@ document.getElementById('backToTeamBtn').addEventListener('click', () => {
     switchPage('team');
 });
 
-// ==================== Проекты ====================
 function renderProjects() {
     const grid = document.getElementById('projectsGrid');
     if (!projects.length) {
@@ -484,8 +467,6 @@ document.getElementById('projectForm')?.addEventListener('submit', async (e) => 
     renderProjects();
     document.getElementById('projectFormContainer').style.display = 'none';
 });
-
-// ==================== Контакты ====================
 function renderContacts() {
     const content = document.getElementById('contactsContent');
     let html = `
@@ -520,7 +501,6 @@ document.getElementById('contactsForm')?.addEventListener('submit', async (e) =>
     document.getElementById('contactsFormContainer').style.display = 'none';
 });
 
-// ==================== Вспомогательные ====================
 function escapeHtml(unsafe) {
     if (!unsafe) return '';
     return unsafe.replace(/[&<>"]/g, function(m) {
@@ -532,10 +512,8 @@ function escapeHtml(unsafe) {
     });
 }
 
-// ==================== Инициализация ====================
 document.addEventListener('DOMContentLoaded', async () => {
     await loadAllData();
-    // onAuthStateChanged уже установлен, он обновит UI
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
