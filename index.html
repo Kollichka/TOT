@@ -11,7 +11,6 @@
         import { getDatabase, ref, set, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // Замените на свои данные из консоли Firebase
         const firebaseConfig = {
   apiKey: "AIzaSyBOtk6M4eH0ZgTsJ8sC-QHNVgRqqGU5Lak",
   authDomain: "tot-dub.firebaseapp.com",
@@ -23,12 +22,10 @@
   measurementId: "G-5JX2KKJ3TY"
 };
 
-        // Инициализация
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
 
-        // Делаем объекты доступными глобально для script.js
         window.db = db;
         window.ref = ref;
         window.set = set;
@@ -211,7 +208,6 @@
             <div id="memberProfileContent"></div>
         </section>
 
-        <!-- Модальное окно авторизации -->
         <div id="loginModal" class="modal">
             <div class="modal-content">
                 <span class="close">&times;</span>
