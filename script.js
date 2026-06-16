@@ -7,13 +7,11 @@ let isAdmin = false;
 let currentProfileId = null;
 let isUploading = false;
 
-// ========== НАСТРОЙКИ GITHUB ==========
-const GITHUB_TOKEN = "ВАШ_GITHUB_TOKEN";        // Personal Access Token (classic)
-const GITHUB_OWNER = "ВАШ_ЛОГИН";               // ваш логин на GitHub
-const GITHUB_REPO = "НАЗВАНИЕ_РЕПОЗИТОРИЯ";    // например, "tot-images"
-const PHOTO_FOLDER = "team_photos";             // папка в репозитории, где будут фото
+const GITHUB_TOKEN = "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";
+const GITHUB_OWNER = "tot-dub";
+const GITHUB_REPO = "tot-images";
+const PHOTO_FOLDER = "team_photos";
 
-// ========== DOM элементы (без изменений) ==========
 const navLinks = document.querySelectorAll("[data-page]");
 const pages = {
     materials: document.getElementById("materials-page"),
@@ -34,7 +32,6 @@ const loginModal = document.getElementById("loginModal");
 const closeModal = document.querySelector(".close");
 const loginForm = document.getElementById("loginForm");
 
-// ========== Загрузка и сохранение в Firebase Database (без изменений) ==========
 async function loadAllData() {
     try {
         const db = window.db;
@@ -95,33 +92,22 @@ async function saveTeam() { await window.set(window.ref(window.db, "team"), team
 async function saveProjects() { await window.set(window.ref(window.db, "projects"), projects); }
 async function saveContacts() { await window.set(window.ref(window.db, "contacts"), contacts); }
 
-// ========== ЗАГРУЗКА ФОТО НА GITHUB ==========
 async function uploadToGitHub(file, memberId, oldPhotoUrl) {
     if (!file) return null;
     if (!file.type.startsWith("image/")) { alert("Выберите изображение"); return null; }
     if (file.size > 5 * 1024 * 1024) { alert("Файл до 5 МБ"); return null; }
-
     const progressSpan = document.getElementById("uploadProgress");
     if (progressSpan) progressSpan.textContent = "Загрузка...";
-
     try {
-        // 1. Читаем файл как Base64
         const reader = new FileReader();
         const base64 = await new Promise((resolve, reject) => {
             reader.onload = () => resolve(reader.result.split(',')[1]);
             reader.onerror = reject;
             reader.readAsDataURL(file);
         });
-
-        // 2. Формируем имя файла
         const ext = file.name.split('.').pop();
         const fileName = `${memberId}_${Date.now()}.${ext}`;
         const filePath = `${PHOTO_FOLDER}/${fileName}`;
-
-        // 3. Проверяем, нет ли уже файла с таким именем (опционально)
-        //    Для простоты просто загружаем, GitHub создаст новый.
-
-        // 4. Отправляем запрос к GitHub API на создание/обновление файла
         const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`, {
             method: "PUT",
             headers: {
@@ -131,26 +117,19 @@ async function uploadToGitHub(file, memberId, oldPhotoUrl) {
             body: JSON.stringify({
                 message: `Upload photo for member ${memberId}`,
                 content: base64,
-                branch: "main"  // или "master"
+                branch: "main"
             })
         });
-
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.message || "Ошибка GitHub API");
         }
-
         const result = await response.json();
-        // 5. Получаем RAW-ссылку на изображение
         const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${filePath}`;
-
-        // 6. Если было старое фото (на GitHub), удаляем его (опционально)
         if (oldPhotoUrl && oldPhotoUrl.includes("raw.githubusercontent.com")) {
-            // Извлекаем путь из старой ссылки
             const oldPathMatch = oldPhotoUrl.match(/github\.com\/.*\/main\/(.+)/);
             if (oldPathMatch) {
                 const oldFilePath = oldPathMatch[1];
-                // Получаем SHA файла, чтобы удалить
                 const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${oldFilePath}`, {
                     headers: { "Authorization": `token ${GITHUB_TOKEN}` }
                 });
@@ -164,12 +143,11 @@ async function uploadToGitHub(file, memberId, oldPhotoUrl) {
                 }
             }
         }
-
         if (progressSpan) progressSpan.textContent = "Готово!";
         setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 2000);
         return rawUrl;
     } catch (error) {
-        console.error("Ошибка загрузки на GitHub:", error);
+        console.error(error);
         if (progressSpan) progressSpan.textContent = "Ошибка!";
         alert("Ошибка загрузки фото: " + error.message);
         setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 3000);
@@ -177,14 +155,12 @@ async function uploadToGitHub(file, memberId, oldPhotoUrl) {
     }
 }
 
-// Удаление фото с GitHub (если нужно)
 async function deleteGitHubPhoto(photoUrl) {
     if (!photoUrl || !photoUrl.includes("raw.githubusercontent.com")) return;
     try {
         const pathMatch = photoUrl.match(/github\.com\/.*\/main\/(.+)/);
         if (!pathMatch) return;
         const filePath = pathMatch[1];
-        // Получаем SHA файла
         const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`, {
             headers: { "Authorization": `token ${GITHUB_TOKEN}` }
         });
@@ -196,11 +172,10 @@ async function deleteGitHubPhoto(photoUrl) {
             body: JSON.stringify({ message: "Delete photo", sha: fileInfo.sha, branch: "main" })
         });
     } catch (error) {
-        console.warn("Не удалось удалить старое фото:", error);
+        console.warn(error);
     }
 }
 
-// ========== АВТОРИЗАЦИЯ И НАВИГАЦИЯ (без изменений) ==========
 window.onAuthStateChanged(window.auth, (user) => {
     isAdmin = !!user;
     updateAuthUI();
@@ -263,7 +238,6 @@ function escapeHtml(s) {
     });
 }
 
-// ========== МАТЕРИАЛЫ (без изменений) ==========
 function renderMaterials() {
     const grid = document.getElementById("materialsGrid");
     if (!materials.length) { grid.innerHTML = '<div class="empty-message">Пока нет материалов</div>'; return; }
@@ -329,9 +303,6 @@ document.getElementById("materialForm")?.addEventListener("submit", async (e) =>
     document.getElementById("materialFormContainer").style.display = "none";
 });
 
-// ========== КОМАНДА (с загрузкой на GitHub) ==========
-let pendingPhotoFile = null;
-
 function renderTeam() {
     const grid = document.getElementById("teamGrid");
     if (!team.length) { grid.innerHTML = '<div class="empty-message">Команда пока не добавлена</div>'; return; }
@@ -356,6 +327,8 @@ function renderTeam() {
         document.querySelectorAll(".delete-member").forEach(btn => btn.addEventListener("click", (e) => { e.stopPropagation(); deleteMember(btn.dataset.id); }));
     }
 }
+
+let pendingPhotoFile = null;
 
 function editMember(id) {
     const member = team.find(m => m.id === id);
@@ -490,7 +463,6 @@ document.getElementById("memberForm")?.addEventListener("submit", async (e) => {
     }
 });
 
-// ========== ПРОФИЛЬ, ПРОЕКТЫ, КОНТАКТЫ (без изменений) ==========
 function showMemberProfile(mid) {
     currentProfileId = mid;
     renderMemberProfile(mid);
@@ -604,7 +576,6 @@ document.getElementById("contactsForm")?.addEventListener("submit", async (e) =>
     document.getElementById("contactsFormContainer").style.display = "none";
 });
 
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
 document.addEventListener("DOMContentLoaded", async () => {
     await loadAllData();
     navLinks.forEach(link => link.addEventListener("click", (e) => { e.preventDefault(); switchPage(link.dataset.page); }));
