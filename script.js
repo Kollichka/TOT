@@ -8,7 +8,7 @@ let currentProfileId = null;
 let isUploading = false;
 
 const GITHUB_TOKEN = "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";
-const GITHUB_OWNER = "tot-dub";
+const GITHUB_OWNER = "Kollichka";
 const GITHUB_REPO = "tot-images";
 const PHOTO_FOLDER = "team_photos";
 
