@@ -9,23 +9,21 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, child, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
         const firebaseConfig = {
-              apiKey: "AIzaSyBOtk6M4eH0ZgTsJ8sC-QHNVgRqqGU5Lak",
-              authDomain: "tot-dub.firebaseapp.com",
-              databaseURL: "https://tot-dub-default-rtdb.firebaseio.com",
-              projectId: "tot-dub",
-              storageBucket: "tot-dub.firebasestorage.app",
-              messagingSenderId: "368239154357",
-              appId: "1:368239154357:web:c7db40fe79b60392d21afc",
-              measurementId: "G-5JX2KKJ3TY"
+            apiKey: "AIzaSyBOtk6M4eH0ZgTsJ8sC-QHNVgRqqGU5Lak",
+            authDomain: "tot-dub.firebaseapp.com",
+            databaseURL: "https://tot-dub-default-rtdb.firebaseio.com",
+            projectId: "tot-dub",
+            storageBucket: "tot-dub.firebasestorage.app",
+            messagingSenderId: "368239154357",
+            appId: "1:368239154357:web:c7db40fe79b60392d21afc",
+            measurementId: "G-5JX2KKJ3TY"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
-        const storage = getStorage(app);
 
         window.db = db;
         window.ref = ref;
@@ -35,11 +33,6 @@
         window.update = update;
         window.remove = remove;
         window.auth = auth;
-        window.storage = storage;
-        window.storageRef = storageRef;
-        window.uploadBytes = uploadBytes;
-        window.getDownloadURL = getDownloadURL;
-        window.deleteObject = deleteObject;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signOut = signOut;
         window.onAuthStateChanged = onAuthStateChanged;
