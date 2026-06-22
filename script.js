@@ -91,36 +91,48 @@ async function saveContacts() { await window.set(window.ref(window.db, "contacts
 
 async function uploadToFreeImage(file) {
     if (!file) return null;
-    if (!file.type.startsWith("image/")) { alert("Выберите изображение"); return null; }
-    if (file.size > 32 * 1024 * 1024) { alert("Файл до 32 МБ"); return null; }
+    if (!file.type.startsWith("image/")) { 
+        alert("Пожалуйста, выберите изображение"); 
+        return null; 
+    }
+    if (file.size > 64 * 1024 * 1024) { 
+        alert("Максимальный размер файла — 64 МБ"); 
+        return null; 
+    }
 
     const progressSpan = document.getElementById("uploadProgress");
     if (progressSpan) progressSpan.textContent = "Загрузка...";
 
     try {
         const formData = new FormData();
+        formData.append("key", FREEIMAGE_API_KEY);
+        formData.append("action", "upload");
         formData.append("source", file);
         formData.append("type", "file");
-        formData.append("key", FREEIMAGE_API_KEY);
+        formData.append("format", "json");
 
         const response = await fetch("https://freeimage.host/api/1/upload", {
             method: "POST",
             body: formData
         });
 
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
 
-        if (result.image && result.image.url) {
+        if (result.status_code === 200 && result.image) {
             if (progressSpan) progressSpan.textContent = "Готово!";
             setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 2000);
             return result.image.url;
         } else {
-            throw new Error(result.error?.message || "Ошибка загрузки");
+            throw new Error(result.error?.message || "Неизвестная ошибка API");
         }
     } catch (error) {
-        console.error(error);
+        console.error("Ошибка загрузки:", error);
         if (progressSpan) progressSpan.textContent = "Ошибка!";
-        alert("Ошибка загрузки: " + error.message);
+        alert("Не удалось загрузить изображение. Проверьте интернет-соединение или попробуйте другой формат файла.");
         setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 3000);
         return null;
     }
