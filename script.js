@@ -7,7 +7,7 @@ let isAdmin = false;
 let currentProfileId = null;
 let isUploading = false;
 
-const FREEIMAGE_API_KEY = "ВАШ_API_КЛЮЧ_С_FREEIMAGE.HOST";
+const FREEIMAGE_API_KEY = "6d207e02198a847aa98d0a2a901485a5";
 
 const navLinks = document.querySelectorAll("[data-page]");
 const pages = {
