@@ -7,10 +7,7 @@ let isAdmin = false;
 let currentProfileId = null;
 let isUploading = false;
 
-const GITHUB_TOKEN = "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";
-const GITHUB_OWNER = "Kollichka";
-const GITHUB_REPO = "tot-images";
-const PHOTO_FOLDER = "team_photos";
+const IMGBB_API_KEY = "ВАШ_API_КЛЮЧ_С_IMGBB";
 
 const navLinks = document.querySelectorAll("[data-page]");
 const pages = {
@@ -92,87 +89,39 @@ async function saveTeam() { await window.set(window.ref(window.db, "team"), team
 async function saveProjects() { await window.set(window.ref(window.db, "projects"), projects); }
 async function saveContacts() { await window.set(window.ref(window.db, "contacts"), contacts); }
 
-async function uploadToGitHub(file, memberId, oldPhotoUrl) {
+async function uploadToImgBB(file) {
     if (!file) return null;
     if (!file.type.startsWith("image/")) { alert("Выберите изображение"); return null; }
-    if (file.size > 5 * 1024 * 1024) { alert("Файл до 5 МБ"); return null; }
+    if (file.size > 32 * 1024 * 1024) { alert("Файл до 32 МБ"); return null; }
+
     const progressSpan = document.getElementById("uploadProgress");
     if (progressSpan) progressSpan.textContent = "Загрузка...";
+
     try {
-        const reader = new FileReader();
-        const base64 = await new Promise((resolve, reject) => {
+        const toBase64 = (f) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(f);
             reader.onload = () => resolve(reader.result.split(',')[1]);
             reader.onerror = reject;
-            reader.readAsDataURL(file);
         });
-        const ext = file.name.split('.').pop();
-        const fileName = `${memberId}_${Date.now()}.${ext}`;
-        const filePath = `${PHOTO_FOLDER}/${fileName}`;
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`, {
-            method: "PUT",
-            headers: {
-                "Authorization": `token ${GITHUB_TOKEN}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: `Upload photo for member ${memberId}`,
-                content: base64,
-                branch: "main"
-            })
+        const base64 = await toBase64(file);
+        const formData = new FormData();
+        formData.append("image", base64);
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            method: "POST",
+            body: formData
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || "Ошибка GitHub API");
-        }
         const result = await response.json();
-        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${filePath}`;
-        if (oldPhotoUrl && oldPhotoUrl.includes("raw.githubusercontent.com")) {
-            const oldPathMatch = oldPhotoUrl.match(/github\.com\/.*\/main\/(.+)/);
-            if (oldPathMatch) {
-                const oldFilePath = oldPathMatch[1];
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${oldFilePath}`, {
-                    headers: { "Authorization": `token ${GITHUB_TOKEN}` }
-                });
-                if (getRes.ok) {
-                    const fileInfo = await getRes.json();
-                    await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${oldFilePath}`, {
-                        method: "DELETE",
-                        headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
-                        body: JSON.stringify({ message: "Delete old photo", sha: fileInfo.sha, branch: "main" })
-                    });
-                }
-            }
-        }
+        if (!result.success) throw new Error(result.error?.message || "Ошибка загрузки");
         if (progressSpan) progressSpan.textContent = "Готово!";
         setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 2000);
-        return rawUrl;
+        return result.data.url;
     } catch (error) {
         console.error(error);
         if (progressSpan) progressSpan.textContent = "Ошибка!";
-        alert("Ошибка загрузки фото: " + error.message);
+        alert("Ошибка загрузки: " + error.message);
         setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 3000);
         return null;
-    }
-}
-
-async function deleteGitHubPhoto(photoUrl) {
-    if (!photoUrl || !photoUrl.includes("raw.githubusercontent.com")) return;
-    try {
-        const pathMatch = photoUrl.match(/github\.com\/.*\/main\/(.+)/);
-        if (!pathMatch) return;
-        const filePath = pathMatch[1];
-        const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`, {
-            headers: { "Authorization": `token ${GITHUB_TOKEN}` }
-        });
-        if (!getRes.ok) return;
-        const fileInfo = await getRes.json();
-        await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`, {
-            method: "DELETE",
-            headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ message: "Delete photo", sha: fileInfo.sha, branch: "main" })
-        });
-    } catch (error) {
-        console.warn(error);
     }
 }
 
@@ -358,10 +307,6 @@ function editMember(id) {
 
 async function deleteMember(id) {
     if (confirm("Удалить участника?")) {
-        const member = team.find(m => m.id === id);
-        if (member?.photo && member.photo.includes("raw.githubusercontent.com")) {
-            await deleteGitHubPhoto(member.photo);
-        }
         team = team.filter(m => m.id !== id);
         await saveTeam();
         if (currentPage === "member-profile" && currentProfileId === id) switchPage("team");
@@ -415,42 +360,21 @@ document.getElementById("memberForm")?.addEventListener("submit", async (e) => {
 
     try {
         if (pendingPhotoFile) {
-            if (id) {
-                const newUrl = await uploadToGitHub(pendingPhotoFile, id, photo);
-                if (newUrl) photo = newUrl;
-            } else {
-                const newId = Date.now().toString();
-                const newMember = { id: newId, name, role, photo: "", bio, social };
-                team.push(newMember);
-                await saveTeam();
-                const newUrl = await uploadToGitHub(pendingPhotoFile, newId, null);
-                if (newUrl) {
-                    const idx = team.findIndex(m => m.id === newId);
-                    if (idx !== -1) team[idx].photo = newUrl;
-                    await saveTeam();
-                }
-                if (currentPage === "member-profile" && currentProfileId === newId) renderMemberProfile(newId);
-                else renderTeam();
-                document.getElementById("memberFormContainer").style.display = "none";
-                isUploading = false;
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                pendingPhotoFile = null;
-                return;
-            }
+            const newUrl = await uploadToImgBB(pendingPhotoFile);
+            if (newUrl) photo = newUrl;
+            pendingPhotoFile = null;
         }
         if (id) {
             const idx = team.findIndex(m => m.id === id);
             if (idx !== -1) team[idx] = { ...team[idx], name, role, photo, bio, social };
             await saveTeam();
-        } else if (!pendingPhotoFile) {
+        } else {
             team.push({ id: Date.now().toString(), name, role, photo, bio, social });
             await saveTeam();
         }
         if (currentPage === "member-profile" && currentProfileId === id) renderMemberProfile(id);
         else renderTeam();
         document.getElementById("memberFormContainer").style.display = "none";
-        pendingPhotoFile = null;
     } catch (err) {
         console.error(err);
         alert("Ошибка сохранения: " + err.message);
@@ -582,11 +506,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     loginBtn.addEventListener("click", showModal);
     logoutBtn.addEventListener("click", logout);
     closeModal.addEventListener("click", hideModal);
-    window.addEventListener("click", (e) => { if (e.target === loginModal) hideModal(); });
-    loginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        login(document.getElementById("username").value, document.getElementById("password").value);
-        hideModal();
-    });
-    switchPage("materials");
-});
