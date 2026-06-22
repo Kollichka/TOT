@@ -7,7 +7,7 @@ let isAdmin = false;
 let currentProfileId = null;
 let isUploading = false;
 
-const IMGBB_API_KEY = "ВАШ_API_КЛЮЧ_С_IMGBB";
+const FREEIMAGE_API_KEY = "ВАШ_API_КЛЮЧ_С_FREEIMAGE.HOST";
 
 const navLinks = document.querySelectorAll("[data-page]");
 const pages = {
@@ -89,7 +89,7 @@ async function saveTeam() { await window.set(window.ref(window.db, "team"), team
 async function saveProjects() { await window.set(window.ref(window.db, "projects"), projects); }
 async function saveContacts() { await window.set(window.ref(window.db, "contacts"), contacts); }
 
-async function uploadToImgBB(file) {
+async function uploadToFreeImage(file) {
     if (!file) return null;
     if (!file.type.startsWith("image/")) { alert("Выберите изображение"); return null; }
     if (file.size > 32 * 1024 * 1024) { alert("Файл до 32 МБ"); return null; }
@@ -98,24 +98,25 @@ async function uploadToImgBB(file) {
     if (progressSpan) progressSpan.textContent = "Загрузка...";
 
     try {
-        const toBase64 = (f) => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(f);
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-        });
-        const base64 = await toBase64(file);
         const formData = new FormData();
-        formData.append("image", base64);
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        formData.append("source", file);
+        formData.append("type", "file");
+        formData.append("key", FREEIMAGE_API_KEY);
+
+        const response = await fetch("https://freeimage.host/api/1/upload", {
             method: "POST",
             body: formData
         });
+
         const result = await response.json();
-        if (!result.success) throw new Error(result.error?.message || "Ошибка загрузки");
-        if (progressSpan) progressSpan.textContent = "Готово!";
-        setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 2000);
-        return result.data.url;
+
+        if (result.image && result.image.url) {
+            if (progressSpan) progressSpan.textContent = "Готово!";
+            setTimeout(() => { if (progressSpan) progressSpan.textContent = ""; }, 2000);
+            return result.image.url;
+        } else {
+            throw new Error(result.error?.message || "Ошибка загрузки");
+        }
     } catch (error) {
         console.error(error);
         if (progressSpan) progressSpan.textContent = "Ошибка!";
@@ -360,7 +361,7 @@ document.getElementById("memberForm")?.addEventListener("submit", async (e) => {
 
     try {
         if (pendingPhotoFile) {
-            const newUrl = await uploadToImgBB(pendingPhotoFile);
+            const newUrl = await uploadToFreeImage(pendingPhotoFile);
             if (newUrl) photo = newUrl;
             pendingPhotoFile = null;
         }
@@ -506,3 +507,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     loginBtn.addEventListener("click", showModal);
     logoutBtn.addEventListener("click", logout);
     closeModal.addEventListener("click", hideModal);
+    window.addEventListener("click", (e) => { if (e.target === loginModal) hideModal(); });
+    loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        login(document.getElementById("username").value, document.getElementById("password").value);
+        hideModal();
+    });
+    switchPage("materials");
+});
